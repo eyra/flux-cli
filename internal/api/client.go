@@ -50,6 +50,10 @@ func NewClient(env string) *Client {
 	}
 }
 
+type IssuesResponse struct {
+	Issues []Issue `json:"issues"`
+}
+
 func (c *Client) ListIssues(stage string) ([]Issue, error) {
 	endpoint := "/api/dev/issues"
 	if stage != "" {
@@ -67,12 +71,12 @@ func (c *Client) ListIssues(stage string) ([]Issue, error) {
 		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	var issues []Issue
-	if err := json.NewDecoder(resp.Body).Decode(&issues); err != nil {
+	var response IssuesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return issues, nil
+	return response.Issues, nil
 }
 
 func (c *Client) GetIssue(id string) (*Issue, error) {
