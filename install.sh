@@ -31,18 +31,17 @@ echo "Installing to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 mv flux "$INSTALL_DIR/flux"
 
-# Add to PATH if not already there
+# Check if PATH needs to be added
 SHELL_RC="$HOME/.zshrc"
 [ -f "$HOME/.bashrc" ] && [ ! -f "$HOME/.zshrc" ] && SHELL_RC="$HOME/.bashrc"
 
-PATH_LINE="export PATH=\"\$PATH:$INSTALL_DIR\""
-
 if ! grep -q "$INSTALL_DIR" "$SHELL_RC" 2>/dev/null; then
-    echo "" >> "$SHELL_RC"
-    echo "# Flux CLI" >> "$SHELL_RC"
-    echo "$PATH_LINE" >> "$SHELL_RC"
-    echo "Added PATH to $SHELL_RC"
-    echo "Run: source $SHELL_RC"
+    echo ""
+    echo "Add to your $SHELL_RC:"
+    echo ""
+    echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
+    echo ""
+    echo "Then run: source $SHELL_RC"
 fi
 
 echo ""
