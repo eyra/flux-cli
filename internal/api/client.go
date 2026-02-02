@@ -32,10 +32,11 @@ type Comment struct {
 }
 
 type Persona struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Role      string `json:"role"`
-	Signature string `json:"signature"`
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	Role         string `json:"role"`
+	Signature    string `json:"signature"`
+	SystemPrompt string `json:"system_prompt,omitempty"`
 }
 
 func NewClient(env string) *Client {
@@ -105,8 +106,29 @@ type PersonasResponse struct {
 	Personas []Persona `json:"personas"`
 }
 
-func (c *Client) ListPersonas() ([]Persona, error) {
-	resp, err := c.httpClient.Get(c.baseURL + "/api/dev/personas")
+type ListPersonasOptions struct {
+	Type          string // "dev", "conversation", or "all"
+	IncludePrompt bool   // Include system_prompt in response
+}
+
+func (c *Client) ListPersonas(opts *ListPersonasOptions) ([]Persona, error) {
+	endpoint := "/api/dev/personas"
+
+	params := url.Values{}
+	if opts != nil {
+		if opts.Type != "" {
+			params.Set("type", opts.Type)
+		}
+		if opts.IncludePrompt {
+			params.Set("include_prompt", "true")
+		}
+	}
+
+	if len(params) > 0 {
+		endpoint = endpoint + "?" + params.Encode()
+	}
+
+	resp, err := c.httpClient.Get(c.baseURL + endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch personas: %w", err)
 	}

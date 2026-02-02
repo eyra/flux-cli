@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	personaTypeFlag    string
+	includePromptFlag  bool
+)
+
 var personasCmd = &cobra.Command{
 	Use:   "personas",
 	Short: "Manage personas",
@@ -19,7 +24,12 @@ var personasListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := api.NewClient(getEnv())
 
-		personas, err := client.ListPersonas()
+		opts := &api.ListPersonasOptions{
+			Type:          personaTypeFlag,
+			IncludePrompt: includePromptFlag,
+		}
+
+		personas, err := client.ListPersonas(opts)
 		if err != nil {
 			return err
 		}
@@ -36,17 +46,24 @@ var personasListCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Println("Dev Personas:")
-		for _, p := range personas {
-			if p.Type == "dev" {
-				fmt.Printf("  %s - %s\n", p.Name, p.Role)
+		// Group by type if showing all
+		if personaTypeFlag == "all" || personaTypeFlag == "" {
+			fmt.Println("Dev Personas:")
+			for _, p := range personas {
+				if p.Type == "dev" {
+					fmt.Printf("  %s - %s\n", p.Name, p.Role)
+				}
 			}
-		}
 
-		fmt.Println("\nConversation Personas:")
-		for _, p := range personas {
-			if p.Type == "conversation" {
-				fmt.Printf("  %s - %s\n", p.Name, p.Role)
+			fmt.Println("\nConversation Personas:")
+			for _, p := range personas {
+				if p.Type == "conversation" {
+					fmt.Printf("  %s - %s\n", p.Name, p.Role)
+				}
+			}
+		} else {
+			for _, p := range personas {
+				fmt.Printf("%s - %s\n", p.Name, p.Role)
 			}
 		}
 
@@ -57,4 +74,7 @@ var personasListCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(personasCmd)
 	personasCmd.AddCommand(personasListCmd)
+
+	personasListCmd.Flags().StringVarP(&personaTypeFlag, "type", "t", "all", "Filter by type: dev, conversation, or all")
+	personasListCmd.Flags().BoolVar(&includePromptFlag, "include-prompt", false, "Include system prompt in output (JSON only)")
 }
