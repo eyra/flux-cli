@@ -19,7 +19,7 @@ var issuesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List issues",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(envFlag)
+		client := api.NewClient(getEnv())
 
 		issues, err := client.ListIssues(stageFlag)
 		if err != nil {
@@ -55,7 +55,7 @@ var issuesGetCmd = &cobra.Command{
 	Short: "Get issue details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(envFlag)
+		client := api.NewClient(getEnv())
 
 		issue, err := client.GetIssue(args[0])
 		if err != nil {

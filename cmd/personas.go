@@ -17,7 +17,7 @@ var personasListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available personas",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(envFlag)
+		client := api.NewClient(getEnv())
 
 		personas, err := client.ListPersonas()
 		if err != nil {

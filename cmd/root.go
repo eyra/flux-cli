@@ -12,6 +12,17 @@ var (
 	jsonFlag bool
 )
 
+func getEnv() string {
+	// Flag takes precedence, then env var, then default
+	if envFlag != "" && envFlag != "prod" {
+		return envFlag
+	}
+	if env := os.Getenv("FLUX_ENV"); env != "" {
+		return env
+	}
+	return "prod"
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "flux",
 	Short: "Flux CLI - Project management from the command line",
