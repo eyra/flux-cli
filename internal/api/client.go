@@ -298,7 +298,7 @@ func (c *Client) DeleteIssue(id, project string) error {
 }
 
 func (c *Client) AddIssueComment(id string, req CommentRequest) error {
-	endpoint := fmt.Sprintf("/api/dev/issues/%s/comment", url.PathEscape(id))
+	endpoint := fmt.Sprintf("/api/dev/issues/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
 		return fmt.Errorf("failed to add comment: %w", err)
@@ -492,7 +492,7 @@ func (c *Client) LinkEpic(id string, req LinkEpicRequest) error {
 }
 
 func (c *Client) AddEpicComment(id string, req CommentRequest) error {
-	endpoint := fmt.Sprintf("/api/dev/epics/%s/comment", url.PathEscape(id))
+	endpoint := fmt.Sprintf("/api/dev/epics/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
 		return fmt.Errorf("failed to add comment: %w", err)
@@ -670,7 +670,7 @@ func (c *Client) ListMilestoneIssues(id string, completed bool, project string) 
 }
 
 func (c *Client) AddMilestoneComment(id string, req CommentRequest) error {
-	endpoint := fmt.Sprintf("/api/dev/milestones/%s/comment", url.PathEscape(id))
+	endpoint := fmt.Sprintf("/api/dev/milestones/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
 		return fmt.Errorf("failed to add comment: %w", err)
@@ -787,7 +787,7 @@ func (c *Client) UpdateIncidents(app, incidents string, req UpdateIncidentReques
 }
 
 func (c *Client) AddIncidentNote(app string, number int, content string) error {
-	endpoint := fmt.Sprintf("/api/dev/appsignal/incidents/%d/note?app=%s",
+	endpoint := fmt.Sprintf("/api/dev/appsignal/incidents/%d/notes?app=%s",
 		number, url.QueryEscape(app))
 
 	req := struct {
