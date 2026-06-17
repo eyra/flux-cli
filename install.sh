@@ -31,6 +31,14 @@ echo "Installing to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 mv flux "$INSTALL_DIR/flux"
 
+# Install Claude Code skill
+SKILL_DIR="$HOME/.claude/skills/flux"
+if [ -f "skill/SKILL.md" ]; then
+    echo "Installing Claude Code skill to $SKILL_DIR..."
+    mkdir -p "$SKILL_DIR"
+    cp skill/SKILL.md "$SKILL_DIR/SKILL.md"
+fi
+
 # Check if PATH needs to be added
 SHELL_RC="$HOME/.zshrc"
 [ -f "$HOME/.bashrc" ] && [ ! -f "$HOME/.zshrc" ] && SHELL_RC="$HOME/.bashrc"

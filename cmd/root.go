@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -68,6 +69,18 @@ func getProject() string {
 		return projectFlag
 	}
 	return "flux"
+}
+
+func printOK(fields ...string) {
+	if !jsonFlag {
+		return
+	}
+	m := map[string]string{"ok": "true"}
+	for i := 0; i+1 < len(fields); i += 2 {
+		m[fields[i]] = fields[i+1]
+	}
+	data, _ := json.MarshalIndent(m, "", "  ")
+	fmt.Println(string(data))
 }
 
 var rootCmd = &cobra.Command{

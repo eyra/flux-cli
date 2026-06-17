@@ -202,7 +202,11 @@ var issuesDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Deleted issue %s\n", args[0])
+		if jsonFlag {
+			printOK("id", args[0])
+		} else {
+			fmt.Printf("Deleted issue %s\n", args[0])
+		}
 		return nil
 	},
 }
@@ -228,7 +232,11 @@ var issuesCommentCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Added comment to issue %s\n", args[0])
+		if jsonFlag {
+			printOK("id", args[0])
+		} else {
+			fmt.Printf("Added comment to issue %s\n", args[0])
+		}
 		return nil
 	},
 }
@@ -252,7 +260,9 @@ var issuesAdvanceCmd = &cobra.Command{
 			return err
 		}
 
-		if issueTargetStageFlag != "" {
+		if jsonFlag {
+			printOK("id", args[0], "stage", issueTargetStageFlag)
+		} else if issueTargetStageFlag != "" {
 			fmt.Printf("Advanced issue %s to %s\n", args[0], issueTargetStageFlag)
 		} else {
 			fmt.Printf("Advanced issue %s\n", args[0])
@@ -288,7 +298,9 @@ var issuesLinkCmd = &cobra.Command{
 			return err
 		}
 
-		if issueUnlinkFlag {
+		if jsonFlag {
+			printOK("id", args[0])
+		} else if issueUnlinkFlag {
 			fmt.Printf("Unlinked issue %s from %s %s\n", args[0], issueTargetTypeFlag, issueTargetIDFlag)
 		} else {
 			fmt.Printf("Linked issue %s to %s %s\n", args[0], issueTargetTypeFlag, issueTargetIDFlag)

@@ -244,7 +244,9 @@ var epicsLinkCmd = &cobra.Command{
 			return err
 		}
 
-		if epicUnlinkFlag {
+		if jsonFlag {
+			printOK("id", args[0])
+		} else if epicUnlinkFlag {
 			fmt.Printf("Unlinked epic %s from milestone %s\n", args[0], epicMilestoneFlag)
 		} else {
 			fmt.Printf("Linked epic %s to milestone %s\n", args[0], epicMilestoneFlag)
@@ -274,7 +276,11 @@ var epicsCommentCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Added comment to epic %s\n", args[0])
+		if jsonFlag {
+			printOK("id", args[0])
+		} else {
+			fmt.Printf("Added comment to epic %s\n", args[0])
+		}
 		return nil
 	},
 }

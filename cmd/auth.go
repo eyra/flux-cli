@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/eyra/flux-cli/internal/auth"
@@ -56,13 +57,27 @@ var authStatusCmd = &cobra.Command{
 
 		creds, err := auth.Load(env)
 		if err != nil || creds == nil {
-			fmt.Printf("Not signed in (%s)\n", env)
-			fmt.Println("Run 'flux auth login' to sign in.")
+			if jsonFlag {
+				data, _ := json.MarshalIndent(map[string]interface{}{"signed_in": false, "env": env}, "", "  ")
+				fmt.Println(string(data))
+			} else {
+				fmt.Printf("Not signed in (%s)\n", env)
+				fmt.Println("Run 'flux auth login' to sign in.")
+			}
 			return nil
 		}
 
-		fmt.Printf("Signed in (%s)\n", env)
-		fmt.Printf("Token expires: %s\n", creds.ExpiresAt.Format("2006-01-02 15:04"))
+		if jsonFlag {
+			data, _ := json.MarshalIndent(map[string]interface{}{
+				"signed_in":  true,
+				"env":        env,
+				"expires_at": creds.ExpiresAt,
+			}, "", "  ")
+			fmt.Println(string(data))
+		} else {
+			fmt.Printf("Signed in (%s)\n", env)
+			fmt.Printf("Token expires: %s\n", creds.ExpiresAt.Format("2006-01-02 15:04"))
+		}
 		return nil
 	},
 }

@@ -288,7 +288,11 @@ var milestonesCommentCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Added comment to milestone %s\n", args[0])
+		if jsonFlag {
+			printOK("id", args[0])
+		} else {
+			fmt.Printf("Added comment to milestone %s\n", args[0])
+		}
 		return nil
 	},
 }
