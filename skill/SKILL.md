@@ -173,11 +173,14 @@ Credentials stored in `~/.config/flux/credentials.json`, one entry per environme
 
 The server processes all comment content through the same pipeline as the MCP tools:
 
-1. **Plain text** is automatically wrapped in `<p>` and `<br>` tags — just write normal text, newlines become `<br>`, blank lines become paragraph breaks.
+1. **Plain text** is automatically converted — newlines become `<br>`, blank lines become paragraph breaks, and common Markdown syntax is converted to HTML:
+   - `**bold**` → `<strong>bold</strong>`
+   - `_italic_` → `<em>italic</em>`
+   - Lines starting with `- ` or `* ` become `<ul><li>` bullet lists
 2. **HTML** — if your content contains `<`, it is sent as-is. Use only tags Trix supports: `<strong>`, `<em>`, `<s>`, `<a href>`, `<ul>/<li>`, `<ol>/<li>`, `<blockquote>`, `<pre>`, `<br>`, `<p>`.
 3. **@mentions** — write `@Name` or `@First Last` anywhere in the content. The server looks up the person in the project and converts to a proper Basecamp mention (notifies them). Works in both plain text and HTML content.
 
-**Recommended:** write plain text and let the server handle formatting. Only use HTML when you need lists, bold, or links.
+**Recommended:** write plain text with Markdown syntax and let the server handle the conversion.
 
 ## JSON Output
 
