@@ -64,11 +64,13 @@ func getAPIKey() string {
 }
 
 func getProject() string {
-	// Flag takes precedence, default to flux
 	if projectFlag != "" {
 		return projectFlag
 	}
-	return "flux"
+	if getEnv() == "test" {
+		return "flux"
+	}
+	return "next"
 }
 
 func printOK(fields ...string) {
@@ -104,5 +106,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&envFlag, "env", "e", "prod", "Environment: prod or test")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as JSON")
 	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key for write operations (or use FLUX_API_KEY env var)")
-	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "flux", "Project key: flux or next")
+	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", "Project key: flux or next (default: next on prod, flux on test)")
 }

@@ -36,7 +36,7 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 
 1. **Always use `--json`** for data extraction and confirmation of mutations. Only omit it when presenting results directly to a human in prose.
 2. **Two environments** — `prod` (default) manages the Next Platform project; `--env test` manages the Flux Platform project itself. When the user asks about Flux's own issues/epics, always add `--env test`.
-3. **Two projects** — `--project flux` (default) for Flux Platform issues; `--project next` for Next Platform issues. Pass `--project` explicitly when operating across environments.
+3. **Two projects** — `--project flux` for Flux Platform issues; `--project next` for Next Platform issues. Default is `next` on prod, `flux` on `--env test`. Pass `--project` explicitly when it differs from the default.
 4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login [--env test]` and retry.
 5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `--title` on the advance or update command to set it.
 6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID.
@@ -71,11 +71,11 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 
 ```
 Flux Platform issues (our own backlog):
-  flux issues list --env test --project flux --json
+  flux issues list --env test --json        (flux is default project on test)
+  flux issues list --project flux --json    (explicit, works on prod too)
 
 Next Platform issues (what Flux manages):
-  flux issues list --json   (prod + flux are both defaults)
-  flux issues list --project next --json
+  flux issues list --json                   (next is default project on prod)
 ```
 
 ## Issue Stages
