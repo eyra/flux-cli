@@ -9,6 +9,8 @@ builds:
     binary: flux
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Tag}}
     goos:
       - darwin
       - linux
