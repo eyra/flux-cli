@@ -285,6 +285,25 @@ var epicsCommentCmd = &cobra.Command{
 	},
 }
 
+var epicsResyncCmd = &cobra.Command{
+	Use:   "resync [id]",
+	Short: "Refresh linked issue titles on an epic",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		result, err := client.ResyncEpic(args[0], getProject())
+		if err != nil {
+			return err
+		}
+		if jsonFlag {
+			fmt.Printf(`{"ok":"true","updated":%d,"checked":%d}`+"\n", result.Updated, result.Checked)
+		} else {
+			fmt.Printf("Resynced: %d/%d linked issues updated\n", result.Updated, result.Checked)
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(epicsCmd)
 	epicsCmd.AddCommand(epicsListCmd)
@@ -294,6 +313,7 @@ func init() {
 	epicsCmd.AddCommand(epicsIssuesCmd)
 	epicsCmd.AddCommand(epicsLinkCmd)
 	epicsCmd.AddCommand(epicsCommentCmd)
+	epicsCmd.AddCommand(epicsResyncCmd)
 
 	// List flags
 	epicsListCmd.Flags().StringVar(&epicMilestoneFlag, "milestone", "", "Filter by milestone ID")

@@ -184,6 +184,12 @@ type Note struct {
 	Content string `json:"content"`
 }
 
+// AssignIssueRequest is the request body for assigning an issue
+type AssignIssueRequest struct {
+	AssigneeIDs string `json:"assignee_ids"`
+	Project     string `json:"project,omitempty"`
+}
+
 // UpdateIncidentRequest is the request body for updating incidents
 type UpdateIncidentRequest struct {
 	State    string `json:"state,omitempty"`

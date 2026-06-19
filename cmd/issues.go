@@ -29,6 +29,8 @@ var (
 	issueUnlinkFlag     bool
 	// Comment flag
 	issueCommentContentFlag string
+	// Assign flag
+	issueAssigneeIDsFlag string
 )
 
 var issuesCmd = &cobra.Command{
@@ -309,6 +311,31 @@ var issuesLinkCmd = &cobra.Command{
 	},
 }
 
+var issuesAssignCmd = &cobra.Command{
+	Use:   "assign [id]",
+	Short: "Assign people to an issue",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if issueAssigneeIDsFlag == "" {
+			return fmt.Errorf("--assignees is required")
+		}
+		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		req := api.AssignIssueRequest{
+			AssigneeIDs: issueAssigneeIDsFlag,
+			Project:     getProject(),
+		}
+		if err := client.AssignIssue(args[0], req); err != nil {
+			return err
+		}
+		if jsonFlag {
+			printOK("id", args[0])
+		} else {
+			fmt.Printf("Issue %s assigned\n", args[0])
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(issuesCmd)
 	issuesCmd.AddCommand(issuesListCmd)
@@ -357,4 +384,9 @@ func init() {
 	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic or milestone (required)")
 	issuesLinkCmd.Flags().StringVar(&issueTargetIDFlag, "target-id", "", "Target ID (required)")
 	issuesLinkCmd.Flags().BoolVar(&issueUnlinkFlag, "unlink", false, "Unlink instead of link")
+
+	// Assign flags
+	issuesAssignCmd.Flags().StringVar(&issueAssigneeIDsFlag, "assignees", "", "Comma-separated person IDs (required)")
+
+	issuesCmd.AddCommand(issuesAssignCmd)
 }

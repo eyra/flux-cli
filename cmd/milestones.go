@@ -297,6 +297,25 @@ var milestonesCommentCmd = &cobra.Command{
 	},
 }
 
+var milestonesResyncCmd = &cobra.Command{
+	Use:   "resync [id]",
+	Short: "Refresh linked issue titles on a milestone",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		result, err := client.ResyncMilestone(args[0], getProject())
+		if err != nil {
+			return err
+		}
+		if jsonFlag {
+			fmt.Printf(`{"ok":"true","updated":%d,"checked":%d}`+"\n", result.Updated, result.Checked)
+		} else {
+			fmt.Printf("Resynced: %d/%d linked issues updated\n", result.Updated, result.Checked)
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(milestonesCmd)
 	milestonesCmd.AddCommand(milestonesListCmd)
@@ -306,6 +325,7 @@ func init() {
 	milestonesCmd.AddCommand(milestonesEpicsCmd)
 	milestonesCmd.AddCommand(milestonesIssuesCmd)
 	milestonesCmd.AddCommand(milestonesCommentCmd)
+	milestonesCmd.AddCommand(milestonesResyncCmd)
 
 	// List flags
 	milestonesListCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed milestones")

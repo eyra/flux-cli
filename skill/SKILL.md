@@ -49,21 +49,30 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 | Sign in | `flux auth login [--env test]` |
 | Auth status | `flux auth status [--env test] --json` |
 | List projects | `flux projects list --json` |
+| List people | `flux people list --json` |
 | List issues | `flux issues list --json [--stage testing]` |
 | Get issue | `flux issues get <id> --json` |
 | Create issue | `flux issues create --title "..." [--stage specification] [--program dev] [--size M] --json` |
 | Update issue | `flux issues update <id> --title "..." --json` |
 | Advance issue | `flux issues advance <id> --stage testing --comment "..." --json` |
+| Assign issue | `flux issues assign <id> --assignees <person_id,...> --json` |
 | Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --json` |
 | Add comment | `flux issues comment <id> --content "..." --json` |
+| Update comment | `flux comments update <comment_id> --content "..." --json` |
+| Delete comment | `flux comments delete <comment_id> --json` |
 | Delete issue | `flux issues delete <id> --json` |
 | List epics | `flux epics list --json` |
 | Get epic | `flux epics get <id> --json` |
 | Create epic | `flux epics create --title "..." --json` |
 | List epic issues | `flux epics issues <id> --json` |
+| Resync epic linked issues | `flux epics resync <id> --json` |
 | List milestones | `flux milestones list --json` |
 | Get milestone | `flux milestones get <id> --json` |
+| Resync milestone linked issues | `flux milestones resync <id> --json` |
 | List personas | `flux personas list --json` |
+| Upload image | `flux images upload --file <path> [--caption "..."] --json` |
+| Render diagram | `flux diagrams render --file <path.mmd> --json` |
+| Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --json` |
 | AppSignal apps | `flux appsignal apps --json` |
 | AppSignal incidents | `flux appsignal incidents list --app <app> --json` |
 

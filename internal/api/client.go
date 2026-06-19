@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 )
 
 var (
@@ -337,6 +340,21 @@ func (c *Client) LinkIssue(id string, req LinkRequest) error {
 
 	if resp.StatusCode != http.StatusOK {
 		return c.handleResponseError(resp, "link issue")
+	}
+
+	return nil
+}
+
+func (c *Client) AssignIssue(id string, req AssignIssueRequest) error {
+	endpoint := fmt.Sprintf("/api/dev/issues/%s/assign", url.PathEscape(id))
+	resp, err := c.post(endpoint, req)
+	if err != nil {
+		return fmt.Errorf("failed to assign issue: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return c.handleResponseError(resp, "assign issue")
 	}
 
 	return nil
@@ -832,4 +850,245 @@ func (c *Client) GetAppSignalResources(app, sections string) (*AppSignalResource
 	}
 
 	return &resources, nil
+}
+
+// =============================================================================
+// People
+// =============================================================================
+
+type Person struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func (c *Client) ListPeople(project string) ([]Person, error) {
+	endpoint := "/api/dev/people"
+	if project != "" {
+		endpoint += "?project=" + url.QueryEscape(project)
+	}
+
+	resp, err := c.get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch people: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "list people")
+	}
+
+	var response struct {
+		People []Person `json:"people"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return response.People, nil
+}
+
+// =============================================================================
+// Comments
+// =============================================================================
+
+type CommentResult struct {
+	ID string `json:"id"`
+}
+
+func (c *Client) UpdateComment(id, content, project, persona string) (*CommentResult, error) {
+	body := map[string]string{"content": content}
+	if project != "" {
+		body["project"] = project
+	}
+	if persona != "" {
+		body["persona"] = persona
+	}
+
+	resp, err := c.patch(fmt.Sprintf("/api/dev/comments/%s", url.PathEscape(id)), body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update comment: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "update comment")
+	}
+
+	var result CommentResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (c *Client) DeleteComment(id, project string) (*CommentResult, error) {
+	endpoint := fmt.Sprintf("/api/dev/comments/%s", url.PathEscape(id))
+	if project != "" {
+		endpoint += "?project=" + url.QueryEscape(project)
+	}
+
+	resp, err := c.delete(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete comment: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "delete comment")
+	}
+
+	var result CommentResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// =============================================================================
+// Images & Diagrams
+// =============================================================================
+
+type AttachmentResult struct {
+	SGID string `json:"sgid"`
+	HTML string `json:"html"`
+}
+
+func (c *Client) UploadImage(filePath, caption, project string) (*AttachmentResult, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open file: %w", err)
+	}
+	defer f.Close()
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+
+	fw, err := mw.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return nil, err
+	}
+	if _, err = io.Copy(fw, f); err != nil {
+		return nil, err
+	}
+	if caption != "" {
+		mw.WriteField("caption", caption)
+	}
+	if project != "" {
+		mw.WriteField("project", project)
+	}
+	mw.Close()
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+"/api/dev/images", &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload image: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "upload image")
+	}
+
+	var result AttachmentResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (c *Client) RenderDiagram(mermaid, caption, project string) (*AttachmentResult, error) {
+	body := map[string]string{"mermaid": mermaid}
+	if caption != "" {
+		body["caption"] = caption
+	}
+	if project != "" {
+		body["project"] = project
+	}
+
+	resp, err := c.post("/api/dev/diagrams", body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render diagram: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "render diagram")
+	}
+
+	var result AttachmentResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// =============================================================================
+// Resync
+// =============================================================================
+
+type ResyncResult struct {
+	Updated int `json:"updated"`
+	Checked int `json:"checked"`
+}
+
+func (c *Client) ResyncEpic(id, project string) (*ResyncResult, error) {
+	endpoint := fmt.Sprintf("/api/dev/epics/%s/resync", url.PathEscape(id))
+	body := map[string]string{}
+	if project != "" {
+		body["project"] = project
+	}
+
+	resp, err := c.post(endpoint, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resync epic: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "resync epic")
+	}
+
+	var result ResyncResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (c *Client) ResyncMilestone(id, project string) (*ResyncResult, error) {
+	endpoint := fmt.Sprintf("/api/dev/milestones/%s/resync", url.PathEscape(id))
+	body := map[string]string{}
+	if project != "" {
+		body["project"] = project
+	}
+
+	resp, err := c.post(endpoint, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resync milestone: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "resync milestone")
+	}
+
+	var result ResyncResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }
