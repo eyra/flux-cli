@@ -61,17 +61,24 @@ type CommentRequest struct {
 	Project string `json:"project,omitempty"`
 }
 
+// LinkedIssue represents an issue linked to an epic or milestone
+type LinkedIssue struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
 // Epic represents an epic in the backlog
 type Epic struct {
-	ID           string   `json:"id"`
-	Title        string   `json:"title"`
-	Description  string   `json:"description,omitempty"`
-	Milestone    string   `json:"milestone,omitempty"`
-	MilestoneID  string   `json:"milestone_id,omitempty"`
-	Branch       string   `json:"branch,omitempty"`
-	Assignees    []string `json:"assignees,omitempty"`
-	LinkedIssues []string `json:"linked_issues,omitempty"`
-	Thread       []Comment `json:"thread,omitempty"`
+	ID           string        `json:"id"`
+	Title        string        `json:"title"`
+	Description  string        `json:"description,omitempty"`
+	Milestone    string        `json:"milestone,omitempty"`
+	MilestoneID  string        `json:"milestone_id,omitempty"`
+	Branch       string        `json:"branch,omitempty"`
+	Assignees    []string      `json:"assignees,omitempty"`
+	LinkedIssues []LinkedIssue `json:"linked_issues,omitempty"`
+	Thread       []Comment     `json:"thread,omitempty"`
 }
 
 // EpicsResponse is the response from listing epics
@@ -114,9 +121,9 @@ type Milestone struct {
 	Workflow        string   `json:"workflow,omitempty"`
 	GithubMilestone int      `json:"github_milestone,omitempty"`
 	Assignees       []string `json:"assignees,omitempty"`
-	LinkedEpics     []string `json:"linked_epics,omitempty"`
-	LinkedIssues    []string `json:"linked_issues,omitempty"`
-	Thread          []Comment `json:"thread,omitempty"`
+	LinkedEpics     []string      `json:"linked_epics,omitempty"`
+	LinkedIssues    []LinkedIssue `json:"linked_issues,omitempty"`
+	Thread          []Comment     `json:"thread,omitempty"`
 }
 
 // MilestonesResponse is the response from listing milestones

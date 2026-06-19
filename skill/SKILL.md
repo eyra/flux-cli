@@ -169,6 +169,16 @@ flux auth status --json      # Check status
 
 Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. The old `FLUX_API_KEY` env var and `--api-key` flag still work for CI/CD.
 
+## Comment Formatting
+
+The server processes all comment content through the same pipeline as the MCP tools:
+
+1. **Plain text** is automatically wrapped in `<p>` and `<br>` tags — just write normal text, newlines become `<br>`, blank lines become paragraph breaks.
+2. **HTML** — if your content contains `<`, it is sent as-is. Use only tags Trix supports: `<strong>`, `<em>`, `<s>`, `<a href>`, `<ul>/<li>`, `<ol>/<li>`, `<blockquote>`, `<pre>`, `<br>`, `<p>`.
+3. **@mentions** — write `@Name` or `@First Last` anywhere in the content. The server looks up the person in the project and converts to a proper Basecamp mention (notifies them). Works in both plain text and HTML content.
+
+**Recommended:** write plain text and let the server handle formatting. Only use HTML when you need lists, bold, or links.
+
 ## JSON Output
 
 All commands support `--json`. Reads return the full resource object. Mutations return:

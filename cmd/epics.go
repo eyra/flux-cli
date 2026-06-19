@@ -103,7 +103,7 @@ var epicsGetCmd = &cobra.Command{
 		if len(epic.LinkedIssues) > 0 {
 			fmt.Printf("\n## Linked Issues (%d)\n\n", len(epic.LinkedIssues))
 			for _, issue := range epic.LinkedIssues {
-				fmt.Printf("- %s\n", issue)
+				fmt.Printf("- %s  %s\n", issue.ID, issue.Title)
 			}
 		}
 

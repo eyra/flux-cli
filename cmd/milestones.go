@@ -116,7 +116,7 @@ var milestonesGetCmd = &cobra.Command{
 		if len(milestone.LinkedIssues) > 0 {
 			fmt.Printf("\n## Linked Issues (%d)\n\n", len(milestone.LinkedIssues))
 			for _, issue := range milestone.LinkedIssues {
-				fmt.Printf("- %s\n", issue)
+				fmt.Printf("- %s  %s\n", issue.ID, issue.Title)
 			}
 		}
 

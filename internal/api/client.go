@@ -857,7 +857,7 @@ func (c *Client) GetAppSignalResources(app, sections string) (*AppSignalResource
 // =============================================================================
 
 type Person struct {
-	ID   int    `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
