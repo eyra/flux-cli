@@ -1,0 +1,33 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: .
+    binary: flux
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "flux_{{ .Os }}_{{ .Arch }}"
+    files:
+      - skill/SKILL.md
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: eyra
+    name: flux-cli
+  name_template: "v{{ .Version }}"
