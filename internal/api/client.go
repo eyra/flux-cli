@@ -383,7 +383,7 @@ func (c *Client) ListEpics(opts ListEpicsOptions) ([]Epic, error) {
 		params.Set("milestone", opts.Milestone)
 	}
 	if opts.Completed {
-		params.Set("include_completed", "true")
+		params.Set("completed", "true")
 	}
 	if opts.Project != "" {
 		params.Set("project", opts.Project)
@@ -544,7 +544,7 @@ func (c *Client) AddEpicComment(id string, req CommentRequest) error {
 func (c *Client) ListMilestones(opts ListMilestonesOptions) ([]Milestone, error) {
 	params := url.Values{}
 	if opts.Completed {
-		params.Set("include_completed", "true")
+		params.Set("completed", "true")
 	}
 	if opts.Project != "" {
 		params.Set("project", opts.Project)
