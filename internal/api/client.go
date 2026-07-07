@@ -870,8 +870,9 @@ func (c *Client) GetAppSignalResources(app, sections string) (*AppSignalResource
 // =============================================================================
 
 type Person struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatar_url,omitempty"`
 }
 
 func (c *Client) ListPeople(project string) ([]Person, error) {

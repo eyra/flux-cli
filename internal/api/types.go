@@ -120,7 +120,7 @@ type Milestone struct {
 	Branch          string   `json:"branch,omitempty"`
 	Workflow        string   `json:"workflow,omitempty"`
 	GithubMilestone int      `json:"github_milestone,omitempty"`
-	Assignees       []string `json:"assignees,omitempty"`
+	Assignees       []Person `json:"assignees,omitempty"`
 	LinkedEpics     []string      `json:"linked_epics,omitempty"`
 	LinkedIssues    []LinkedIssue `json:"linked_issues,omitempty"`
 	Thread          []Comment     `json:"thread,omitempty"`
