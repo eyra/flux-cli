@@ -61,6 +61,12 @@ type CommentRequest struct {
 	Project string `json:"project,omitempty"`
 }
 
+// CommentResponse is returned when a comment is created
+type CommentResponse struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+}
+
 // LinkedIssue represents an issue linked to an epic or milestone
 type LinkedIssue struct {
 	ID    string `json:"id"`

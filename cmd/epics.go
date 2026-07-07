@@ -272,14 +272,16 @@ var epicsCommentCmd = &cobra.Command{
 			Project: getProject(),
 		}
 
-		if err := client.AddEpicComment(args[0], req); err != nil {
+		comment, err := client.AddEpicComment(args[0], req)
+		if err != nil {
 			return err
 		}
 
 		if jsonFlag {
-			printOK("id", args[0])
+			data, _ := json.MarshalIndent(comment, "", "  ")
+			fmt.Println(string(data))
 		} else {
-			fmt.Printf("Added comment to epic %s\n", args[0])
+			fmt.Printf("Added comment %s to epic %s\n", comment.ID, args[0])
 		}
 		return nil
 	},

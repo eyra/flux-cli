@@ -313,19 +313,24 @@ func (c *Client) DeleteIssue(id, project string) error {
 	return nil
 }
 
-func (c *Client) AddIssueComment(id string, req CommentRequest) error {
+func (c *Client) AddIssueComment(id string, req CommentRequest) (*CommentResponse, error) {
 	endpoint := fmt.Sprintf("/api/dev/issues/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
-		return fmt.Errorf("failed to add comment: %w", err)
+		return nil, fmt.Errorf("failed to add comment: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return c.handleResponseError(resp, "add comment")
+		return nil, c.handleResponseError(resp, "add comment")
 	}
 
-	return nil
+	var result CommentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }
 
 func (c *Client) AdvanceIssue(id string, req AdvanceIssueRequest) error {
@@ -522,19 +527,24 @@ func (c *Client) LinkEpic(id string, req LinkEpicRequest) error {
 	return nil
 }
 
-func (c *Client) AddEpicComment(id string, req CommentRequest) error {
+func (c *Client) AddEpicComment(id string, req CommentRequest) (*CommentResponse, error) {
 	endpoint := fmt.Sprintf("/api/dev/epics/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
-		return fmt.Errorf("failed to add comment: %w", err)
+		return nil, fmt.Errorf("failed to add comment: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return c.handleResponseError(resp, "add comment")
+		return nil, c.handleResponseError(resp, "add comment")
 	}
 
-	return nil
+	var result CommentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }
 
 // =============================================================================
@@ -700,19 +710,24 @@ func (c *Client) ListMilestoneIssues(id string, completed bool, project string) 
 	return response.Issues, nil
 }
 
-func (c *Client) AddMilestoneComment(id string, req CommentRequest) error {
+func (c *Client) AddMilestoneComment(id string, req CommentRequest) (*CommentResponse, error) {
 	endpoint := fmt.Sprintf("/api/dev/milestones/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
-		return fmt.Errorf("failed to add comment: %w", err)
+		return nil, fmt.Errorf("failed to add comment: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return c.handleResponseError(resp, "add comment")
+		return nil, c.handleResponseError(resp, "add comment")
 	}
 
-	return nil
+	var result CommentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }
 
 // =============================================================================
