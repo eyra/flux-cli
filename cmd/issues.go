@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	stageFlag string
+	stageFlag          string
+	issueCompletedFlag bool
 	// Create flags
 	issueTitleFlag       string
 	issueDescriptionFlag string
@@ -44,7 +45,11 @@ var issuesListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
 
-		issues, err := client.ListIssues(stageFlag)
+		issues, err := client.ListIssues(api.ListIssuesOptions{
+				Stage:     stageFlag,
+				Completed: issueCompletedFlag,
+				Project:   getProject(),
+			})
 		if err != nil {
 			return err
 		}
@@ -349,6 +354,7 @@ func init() {
 
 	// List flags
 	issuesListCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Filter by stage (specification, design, development, testing)")
+	issuesListCmd.Flags().BoolVar(&issueCompletedFlag, "completed", false, "List only completed issues")
 
 	// Create flags
 	issuesCreateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "Issue title (required)")

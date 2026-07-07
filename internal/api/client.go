@@ -123,21 +123,34 @@ type IssuesResponse struct {
 	Issues []Issue `json:"issues"`
 }
 
-func (c *Client) ListIssues(stage string) ([]Issue, error) {
-	endpoint := "/api/dev/issues"
-	if stage != "" {
-		endpoint = fmt.Sprintf("%s?stage=%s", endpoint, url.QueryEscape(stage))
+func (c *Client) ListIssues(opts ListIssuesOptions) ([]Issue, error) {
+	params := url.Values{}
+	if opts.Stage != "" {
+		params.Set("stage", opts.Stage)
+	}
+	if opts.Program != "" {
+		params.Set("program", opts.Program)
+	}
+	if opts.Completed {
+		params.Set("completed", "true")
+	}
+	if opts.Project != "" {
+		params.Set("project", opts.Project)
 	}
 
-	resp, err := c.httpClient.Get(c.baseURL + endpoint)
+	endpoint := "/api/dev/issues"
+	if len(params) > 0 {
+		endpoint += "?" + params.Encode()
+	}
+
+	resp, err := c.get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issues: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+		return nil, c.handleResponseError(resp, "list issues")
 	}
 
 	var response IssuesResponse
