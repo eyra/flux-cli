@@ -83,6 +83,7 @@ type Epic struct {
 	MilestoneID  string        `json:"milestone_id,omitempty"`
 	Branch       string        `json:"branch,omitempty"`
 	Assignees    []string      `json:"assignees,omitempty"`
+	Completed    bool          `json:"completed,omitempty"`
 	LinkedIssues []LinkedIssue `json:"linked_issues,omitempty"`
 	Thread       []Comment     `json:"thread,omitempty"`
 }
@@ -119,14 +120,15 @@ type LinkEpicRequest struct {
 
 // Milestone represents a milestone in release planning
 type Milestone struct {
-	ID              string   `json:"id"`
-	Title           string   `json:"title"`
-	Description     string   `json:"description,omitempty"`
-	Repo            string   `json:"repo,omitempty"`
-	Branch          string   `json:"branch,omitempty"`
-	Workflow        string   `json:"workflow,omitempty"`
-	GithubMilestone int      `json:"github_milestone,omitempty"`
-	Assignees       []Person `json:"assignees,omitempty"`
+	ID              string        `json:"id"`
+	Title           string        `json:"title"`
+	Description     string        `json:"description,omitempty"`
+	Repo            string        `json:"repo,omitempty"`
+	Branch          string        `json:"branch,omitempty"`
+	Workflow        string        `json:"workflow,omitempty"`
+	GithubMilestone int           `json:"github_milestone,omitempty"`
+	Assignees       []Person      `json:"assignees,omitempty"`
+	Completed       bool          `json:"completed,omitempty"`
 	LinkedEpics     []string      `json:"linked_epics,omitempty"`
 	LinkedIssues    []LinkedIssue `json:"linked_issues,omitempty"`
 	Thread          []Comment     `json:"thread,omitempty"`

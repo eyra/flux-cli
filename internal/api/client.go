@@ -32,6 +32,7 @@ type Issue struct {
 	Program     string    `json:"program,omitempty"`
 	Size        string    `json:"size,omitempty"`
 	Priority    int       `json:"priority,omitempty"`
+	Completed   bool      `json:"completed,omitempty"`
 	Description string    `json:"description,omitempty"`
 	Thread      []Comment `json:"thread,omitempty"`
 }

@@ -71,6 +71,9 @@ var issuesListCmd = &cobra.Command{
 			if issue.SubStage != "" {
 				stageStr = fmt.Sprintf("%s > %s", issue.Stage, issue.SubStage)
 			}
+			if issue.Completed {
+				stageStr += " done"
+			}
 			fmt.Printf("%s  %s  [%s]\n", issue.ID, issue.Title, stageStr)
 		}
 
@@ -104,6 +107,9 @@ var issuesGetCmd = &cobra.Command{
 			fmt.Printf(" > %s", issue.SubStage)
 		}
 		fmt.Println()
+		if issue.Completed {
+			fmt.Printf("Completed: yes\n")
+		}
 
 		if issue.Program != "" {
 			fmt.Printf("Program: %s\n", issue.Program)

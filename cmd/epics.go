@@ -59,7 +59,11 @@ var epicsListCmd = &cobra.Command{
 			if epic.Milestone != "" {
 				milestoneStr = fmt.Sprintf(" [%s]", epic.Milestone)
 			}
-			fmt.Printf("%s  %s%s\n", epic.ID, epic.Title, milestoneStr)
+			completedStr := ""
+			if epic.Completed {
+				completedStr = " [done]"
+			}
+			fmt.Printf("%s  %s%s%s\n", epic.ID, epic.Title, milestoneStr, completedStr)
 		}
 
 		return nil
@@ -86,6 +90,9 @@ var epicsGetCmd = &cobra.Command{
 
 		fmt.Printf("# %s\n\n", epic.Title)
 		fmt.Printf("ID: %s\n", epic.ID)
+		if epic.Completed {
+			fmt.Printf("Completed: yes\n")
+		}
 		if epic.Milestone != "" {
 			fmt.Printf("Milestone: %s\n", epic.Milestone)
 		}
@@ -210,6 +217,9 @@ var epicsIssuesCmd = &cobra.Command{
 			stageStr := issue.Stage
 			if issue.SubStage != "" {
 				stageStr = fmt.Sprintf("%s > %s", issue.Stage, issue.SubStage)
+			}
+			if issue.Completed {
+				stageStr += " done"
 			}
 			fmt.Printf("%s  %s  [%s]\n", issue.ID, issue.Title, stageStr)
 		}
