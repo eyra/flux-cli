@@ -38,9 +38,17 @@ type Issue struct {
 }
 
 type Comment struct {
+	ID      string `json:"id"`
 	Author  string `json:"author"`
 	Date    string `json:"date"`
 	Content string `json:"content"`
+}
+
+type AdvanceResult struct {
+	TargetStage    string `json:"target_stage"`
+	TargetSubstage string `json:"target_substage,omitempty"`
+	StageCommentID string `json:"stage_comment_id"`
+	UserCommentID  string `json:"user_comment_id,omitempty"`
 }
 
 type Persona struct {
@@ -334,19 +342,24 @@ func (c *Client) AddIssueComment(id string, req CommentRequest) (*CommentRespons
 	return &result, nil
 }
 
-func (c *Client) AdvanceIssue(id string, req AdvanceIssueRequest) error {
+func (c *Client) AdvanceIssue(id string, req AdvanceIssueRequest) (*AdvanceResult, error) {
 	endpoint := fmt.Sprintf("/api/dev/issues/%s/advance", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
 	if err != nil {
-		return fmt.Errorf("failed to advance issue: %w", err)
+		return nil, fmt.Errorf("failed to advance issue: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return c.handleResponseError(resp, "advance issue")
+		return nil, c.handleResponseError(resp, "advance issue")
 	}
 
-	return nil
+	var result AdvanceResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
 }
 
 func (c *Client) LinkIssue(id string, req LinkRequest) error {

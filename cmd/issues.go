@@ -123,7 +123,7 @@ var issuesGetCmd = &cobra.Command{
 		if len(issue.Thread) > 0 {
 			fmt.Printf("\n## Thread (%d comments)\n\n", len(issue.Thread))
 			for _, comment := range issue.Thread {
-				fmt.Printf("**%s** (%s):\n%s\n\n", comment.Author, comment.Date, comment.Content)
+				fmt.Printf("**%s** (%s) [%s]:\n%s\n\n", comment.Author, comment.Date, comment.ID, comment.Content)
 			}
 		}
 
@@ -271,16 +271,28 @@ var issuesAdvanceCmd = &cobra.Command{
 			Project:        getProject(),
 		}
 
-		if err := client.AdvanceIssue(args[0], req); err != nil {
+		result, err := client.AdvanceIssue(args[0], req)
+		if err != nil {
 			return err
 		}
 
 		if jsonFlag {
-			printOK("id", args[0], "stage", issueTargetStageFlag)
-		} else if issueTargetStageFlag != "" {
-			fmt.Printf("Advanced issue %s to %s\n", args[0], issueTargetStageFlag)
+			data, _ := json.MarshalIndent(result, "", "  ")
+			fmt.Println(string(data))
 		} else {
-			fmt.Printf("Advanced issue %s\n", args[0])
+			stage := result.TargetStage
+			if stage == "" {
+				stage = issueTargetStageFlag
+			}
+			if stage != "" {
+				fmt.Printf("Advanced issue %s to %s\n", args[0], stage)
+			} else {
+				fmt.Printf("Advanced issue %s\n", args[0])
+			}
+			fmt.Printf("Stage comment: %s\n", result.StageCommentID)
+			if result.UserCommentID != "" {
+				fmt.Printf("Comment: %s\n", result.UserCommentID)
+			}
 		}
 		return nil
 	},
