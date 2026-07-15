@@ -83,7 +83,7 @@ type Epic struct {
 	MilestoneID  string        `json:"milestone_id,omitempty"`
 	Branch       string        `json:"branch,omitempty"`
 	Assignees    []string      `json:"assignees,omitempty"`
-	Completed    bool          `json:"completed,omitempty"`
+	Completed    bool          `json:"completed"`
 	LinkedIssues []LinkedIssue `json:"linked_issues,omitempty"`
 	Thread       []Comment     `json:"thread,omitempty"`
 }
@@ -128,7 +128,7 @@ type Milestone struct {
 	Workflow        string        `json:"workflow,omitempty"`
 	GithubMilestone int           `json:"github_milestone,omitempty"`
 	Assignees       []Person      `json:"assignees,omitempty"`
-	Completed       bool          `json:"completed,omitempty"`
+	Completed       bool          `json:"completed"`
 	LinkedEpics     []string      `json:"linked_epics,omitempty"`
 	LinkedIssues    []LinkedIssue `json:"linked_issues,omitempty"`
 	Thread          []Comment     `json:"thread,omitempty"`
