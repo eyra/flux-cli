@@ -1,0 +1,59 @@
+name: Notify Basecamp on release
+
+on:
+  release:
+    types: [published]
+
+env:
+  BASECAMP_ACCOUNT_ID: "5734045"
+  BASECAMP_PROJECT_ID: "45557517"
+  BASECAMP_MESSAGE_ID: "10119788042"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Basecamp CLI
+        run: |
+          set -euo pipefail
+          version=$(curl -fsSL https://api.github.com/repos/basecamp/basecamp-cli/releases/latest | jq -r .tag_name | sed 's/^v//')
+          curl -fsSL "https://github.com/basecamp/basecamp-cli/releases/download/v${version}/basecamp_${version}_linux_amd64.tar.gz" -o /tmp/bc.tar.gz
+          tar -xzf /tmp/bc.tar.gz -C /tmp
+          sudo mv /tmp/basecamp /usr/local/bin/basecamp
+          basecamp --version
+
+      - name: Restore Basecamp credentials
+        env:
+          CREDS_B64: ${{ secrets.BASECAMP_CREDENTIALS_B64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/basecamp"
+          printf '%s' "$CREDS_B64" | base64 -d > "$HOME/.config/basecamp/credentials.json"
+          printf '{"account_id":"%s"}\n' "$BASECAMP_ACCOUNT_ID" > "$HOME/.config/basecamp/config.json"
+
+      - name: Post release announcement
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+          NOTES: ${{ github.event.release.body }}
+          URL: ${{ github.event.release.html_url }}
+        run: |
+          set -euo pipefail
+          content=$(cat <<EOF
+          ## flux-cli ${VERSION} is out
+
+          The Flux CLI has a new release. If you use \`flux\` on your machine, upgrade to pick this up:
+
+          \`\`\`
+          curl -fsSL https://raw.githubusercontent.com/eyra/flux-cli/master/install.sh | bash
+          \`\`\`
+
+          **What's new:**
+
+          ${NOTES}
+
+          Full release notes and downloads: ${URL}
+
+          cc [@Joeri Dijkstra](person:51526391) [@Iris van der Veen](person:49402736)
+          EOF
+          )
+          basecamp comment "$BASECAMP_MESSAGE_ID" "$content" --in "$BASECAMP_PROJECT_ID"
