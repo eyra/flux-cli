@@ -1,8 +1,17 @@
 name: Notify Basecamp on release
 
+# Triggered on tag push (not the `release: published` event) because goreleaser
+# creates the GitHub release with GITHUB_TOKEN, and GitHub deliberately does not
+# fire follow-up workflow triggers from GITHUB_TOKEN-created events.
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to announce (e.g. v0.1.8)"
+        required: true
 
 env:
   BASECAMP_ACCOUNT_ID: "5734045"
@@ -22,16 +31,33 @@ jobs:
           sudo mv /tmp/basecamp /usr/local/bin/basecamp
           basecamp --version
 
+      - name: Wait for goreleaser to publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 24); do
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body,url > /tmp/release.json 2>/dev/null; then
+              echo "Release $TAG is published."
+              exit 0
+            fi
+            echo "Release not yet published (attempt $i/24), sleeping 5s..."
+            sleep 5
+          done
+          echo "Release $TAG never appeared after 2 minutes."
+          exit 1
+
       - name: Post release announcement
         env:
           BASECAMP_TOKEN: ${{ secrets.BASECAMP_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
-          NOTES: ${{ github.event.release.body }}
-          URL: ${{ github.event.release.html_url }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
+          NOTES=$(jq -r .body /tmp/release.json)
+          URL=$(jq -r .url /tmp/release.json)
           content=$(cat <<EOF
-          ## flux-cli ${VERSION} is out
+          ## flux-cli ${TAG} is out
 
           The Flux CLI has a new release. If you use \`flux\` on your machine, upgrade to pick this up:
 
