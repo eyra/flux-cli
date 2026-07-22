@@ -74,8 +74,6 @@ jobs:
           ${NOTES}
 
           Full release notes and downloads: ${URL}
-
-          cc [@Joeri Dijkstra](person:51526391) [@Iris van der Veen](person:49402736)
           EOF
           )
           basecamp comment "$BASECAMP_MESSAGE_ID" "$content" --in "$BASECAMP_PROJECT_ID"
