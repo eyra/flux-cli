@@ -63,12 +63,6 @@ jobs:
           content=$(cat <<EOF
           ## flux-cli ${TAG} is out
 
-          The Flux CLI has a new release. If you use \`flux\` on your machine, upgrade to pick this up:
-
-          \`\`\`
-          curl -fsSL https://raw.githubusercontent.com/eyra/flux-cli/master/install.sh | bash
-          \`\`\`
-
           **What's new:**
 
           ${NOTES}
