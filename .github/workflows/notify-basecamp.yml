@@ -50,10 +50,14 @@ jobs:
 
       - name: Post release announcement
         env:
+          # Strip any surrounding whitespace/newlines from the secret — Go's
+          # http client rejects header values containing CR/LF.
           BASECAMP_TOKEN: ${{ secrets.BASECAMP_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
+          BASECAMP_TOKEN=$(printf '%s' "$BASECAMP_TOKEN" | tr -d '\r\n\t ')
+          export BASECAMP_TOKEN
           NOTES=$(jq -r .body /tmp/release.json)
           URL=$(jq -r .url /tmp/release.json)
           content=$(cat <<EOF
