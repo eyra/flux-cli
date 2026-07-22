@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/eyra/flux-cli/internal/api"
 	"github.com/spf13/cobra"
@@ -116,6 +117,13 @@ var issuesGetCmd = &cobra.Command{
 		}
 		if issue.Size != "" {
 			fmt.Printf("Size: %s\n", issue.Size)
+		}
+		if len(issue.Assignees) > 0 {
+			names := make([]string, len(issue.Assignees))
+			for i, p := range issue.Assignees {
+				names[i] = p.Name
+			}
+			fmt.Printf("Assignees: %s\n", strings.Join(names, ", "))
 		}
 
 		fmt.Printf("\n## Description\n\n%s\n", issue.Description)

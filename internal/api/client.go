@@ -34,6 +34,7 @@ type Issue struct {
 	Priority    int       `json:"priority,omitempty"`
 	Completed   bool      `json:"completed"`
 	Description string    `json:"description,omitempty"`
+	Assignees   []Person  `json:"assignees,omitempty"`
 	Thread      []Comment `json:"thread,omitempty"`
 }
 
