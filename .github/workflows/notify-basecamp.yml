@@ -22,17 +22,9 @@ jobs:
           sudo mv /tmp/basecamp /usr/local/bin/basecamp
           basecamp --version
 
-      - name: Restore Basecamp credentials
-        env:
-          CREDS_B64: ${{ secrets.BASECAMP_CREDENTIALS_B64 }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.config/basecamp"
-          printf '%s' "$CREDS_B64" | base64 -d > "$HOME/.config/basecamp/credentials.json"
-          printf '{"account_id":"%s"}\n' "$BASECAMP_ACCOUNT_ID" > "$HOME/.config/basecamp/config.json"
-
       - name: Post release announcement
         env:
+          BASECAMP_TOKEN: ${{ secrets.BASECAMP_TOKEN }}
           VERSION: ${{ github.event.release.tag_name }}
           NOTES: ${{ github.event.release.body }}
           URL: ${{ github.event.release.html_url }}
