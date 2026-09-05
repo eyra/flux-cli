@@ -19,6 +19,7 @@ type CreateIssueRequest struct {
 	Program     string `json:"program,omitempty"`
 	Size        string `json:"size,omitempty"`
 	Priority    int    `json:"priority,omitempty"`
+	App         string `json:"app,omitempty"`
 	Epic        string `json:"epic,omitempty"`
 	Milestone   string `json:"milestone,omitempty"`
 	Persona     string `json:"persona,omitempty"`
@@ -31,6 +32,7 @@ type UpdateIssueRequest struct {
 	Description string `json:"description,omitempty"`
 	Size        string `json:"size,omitempty"`
 	Priority    int    `json:"priority,omitempty"`
+	App         string `json:"app,omitempty"`
 	Epic        string `json:"epic,omitempty"`
 	Milestone   string `json:"milestone,omitempty"`
 	Persona     string `json:"persona,omitempty"`
@@ -123,6 +125,7 @@ type Milestone struct {
 	ID              string        `json:"id"`
 	Title           string        `json:"title"`
 	Description     string        `json:"description,omitempty"`
+	App             string        `json:"app,omitempty"`
 	Repo            string        `json:"repo,omitempty"`
 	Branch          string        `json:"branch,omitempty"`
 	Workflow        string        `json:"workflow,omitempty"`
@@ -143,6 +146,7 @@ type MilestonesResponse struct {
 type CreateMilestoneRequest struct {
 	Title           string `json:"title"`
 	Description     string `json:"description,omitempty"`
+	App             string `json:"app,omitempty"`
 	Repo            string `json:"repo,omitempty"`
 	Branch          string `json:"branch,omitempty"`
 	Workflow        string `json:"workflow,omitempty"`
@@ -155,6 +159,7 @@ type CreateMilestoneRequest struct {
 type UpdateMilestoneRequest struct {
 	Title           string `json:"title,omitempty"`
 	Description     string `json:"description,omitempty"`
+	App             string `json:"app,omitempty"`
 	Repo            string `json:"repo,omitempty"`
 	Branch          string `json:"branch,omitempty"`
 	Workflow        string `json:"workflow,omitempty"`
@@ -244,6 +249,7 @@ type AppSignalDashboard struct {
 type ListIssuesOptions struct {
 	Stage     string
 	Program   string
+	App       string
 	Completed bool
 	Project   string
 }
@@ -258,6 +264,7 @@ type ListEpicsOptions struct {
 // ListMilestonesOptions contains options for listing milestones
 type ListMilestonesOptions struct {
 	Completed bool
+	App       string
 	Project   string
 }
 

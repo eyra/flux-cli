@@ -32,6 +32,7 @@ type Issue struct {
 	Program     string    `json:"program,omitempty"`
 	Size        string    `json:"size,omitempty"`
 	Priority    int       `json:"priority,omitempty"`
+	App         string    `json:"app,omitempty"`
 	Completed   bool      `json:"completed"`
 	Description string    `json:"description,omitempty"`
 	Assignees   []Person  `json:"assignees,omitempty"`
@@ -140,6 +141,9 @@ func (c *Client) ListIssues(opts ListIssuesOptions) ([]Issue, error) {
 	}
 	if opts.Program != "" {
 		params.Set("program", opts.Program)
+	}
+	if opts.App != "" {
+		params.Set("app", opts.App)
 	}
 	if opts.Completed {
 		params.Set("completed", "true")
@@ -570,6 +574,9 @@ func (c *Client) ListMilestones(opts ListMilestonesOptions) ([]Milestone, error)
 	params := url.Values{}
 	if opts.Completed {
 		params.Set("completed", "true")
+	}
+	if opts.App != "" {
+		params.Set("app", opts.App)
 	}
 	if opts.Project != "" {
 		params.Set("project", opts.Project)

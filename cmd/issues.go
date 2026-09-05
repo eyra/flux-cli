@@ -18,6 +18,7 @@ var (
 	issueProgramFlag     string
 	issueSizeFlag        string
 	issuePriorityFlag    int
+	issueAppFlag         string
 	issueEpicFlag        string
 	issueMilestoneFlag   string
 	issuePersonaFlag     string
@@ -47,10 +48,11 @@ var issuesListCmd = &cobra.Command{
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
 
 		issues, err := client.ListIssues(api.ListIssuesOptions{
-				Stage:     stageFlag,
-				Completed: issueCompletedFlag,
-				Project:   getProject(),
-			})
+			Stage:     stageFlag,
+			App:       issueAppFlag,
+			Completed: issueCompletedFlag,
+			Project:   getProject(),
+		})
 		if err != nil {
 			return err
 		}
@@ -75,7 +77,11 @@ var issuesListCmd = &cobra.Command{
 			if issue.Completed {
 				stageStr += " done"
 			}
-			fmt.Printf("%s  %s  [%s]\n", issue.ID, issue.Title, stageStr)
+			if issue.App != "" {
+				fmt.Printf("%s  %s  [%s]  %s\n", issue.ID, issue.Title, stageStr, issue.App)
+			} else {
+				fmt.Printf("%s  %s  [%s]\n", issue.ID, issue.Title, stageStr)
+			}
 		}
 
 		return nil
@@ -118,6 +124,9 @@ var issuesGetCmd = &cobra.Command{
 		if issue.Size != "" {
 			fmt.Printf("Size: %s\n", issue.Size)
 		}
+		if issue.App != "" {
+			fmt.Printf("App: %s\n", issue.App)
+		}
 		if len(issue.Assignees) > 0 {
 			names := make([]string, len(issue.Assignees))
 			for i, p := range issue.Assignees {
@@ -146,6 +155,9 @@ var issuesCreateCmd = &cobra.Command{
 		if issueTitleFlag == "" {
 			return fmt.Errorf("--title is required")
 		}
+		if issueAppFlag == "" {
+			return fmt.Errorf("--app is required (web, ios, or android)")
+		}
 
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
 
@@ -156,6 +168,7 @@ var issuesCreateCmd = &cobra.Command{
 			Program:     issueProgramFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
+			App:         issueAppFlag,
 			Epic:        issueEpicFlag,
 			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
@@ -190,6 +203,7 @@ var issuesUpdateCmd = &cobra.Command{
 			Description: issueDescriptionFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
+			App:         issueAppFlag,
 			Epic:        issueEpicFlag,
 			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
@@ -383,6 +397,7 @@ func init() {
 	// List flags
 	issuesListCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Filter by stage (specification, design, development, testing)")
 	issuesListCmd.Flags().BoolVar(&issueCompletedFlag, "completed", false, "List only completed issues")
+	issuesListCmd.Flags().StringVar(&issueAppFlag, "app", "", "Filter by app (web, ios, android)")
 
 	// Create flags
 	issuesCreateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "Issue title (required)")
@@ -391,6 +406,7 @@ func init() {
 	issuesCreateCmd.Flags().StringVar(&issueProgramFlag, "program", "", "Program (basecamp, github, make, mcp, dev, devops)")
 	issuesCreateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesCreateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
+	issuesCreateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesCreateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
@@ -400,6 +416,7 @@ func init() {
 	issuesUpdateCmd.Flags().StringVar(&issueDescriptionFlag, "description", "", "New description")
 	issuesUpdateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesUpdateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
+	issuesUpdateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesUpdateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")

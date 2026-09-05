@@ -50,10 +50,10 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 | Auth status | `flux auth status [--env test] --json` |
 | List projects | `flux projects list --json` |
 | List people | `flux people list --json` |
-| List issues | `flux issues list --json [--stage testing]` |
+| List issues | `flux issues list --json [--stage testing] [--app web]` |
 | Get issue | `flux issues get <id> --json` |
-| Create issue | `flux issues create --title "..." [--stage specification] [--program dev] [--size M] --json` |
-| Update issue | `flux issues update <id> --title "..." --json` |
+| Create issue | `flux issues create --title "..." --app web [--stage specification] [--program dev] [--size M] --json` |
+| Update issue | `flux issues update <id> --title "..." [--app ios] --json` |
 | Advance issue | `flux issues advance <id> --stage testing --comment "..." --json` |
 | Assign issue | `flux issues assign <id> --assignees <person_id,...> --json` |
 | Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --json` |
@@ -66,7 +66,7 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 | Create epic | `flux epics create --title "..." --json` |
 | List epic issues | `flux epics issues <id> --json` |
 | Resync epic linked issues | `flux epics resync <id> --json` |
-| List milestones | `flux milestones list --json` |
+| List milestones | `flux milestones list --json [--app ios]` |
 | Get milestone | `flux milestones get <id> --json` |
 | Resync milestone linked issues | `flux milestones resync <id> --json` |
 | List personas | `flux personas list --json` |
@@ -114,6 +114,7 @@ flux issues create \
   --stage development \
   --program dev \
   --size M \
+  --app web \
   --json
 
 # Link to epic (use ID from create response)

@@ -20,6 +20,7 @@ var (
 	milestoneAssigneesFlag       string
 	milestoneContentFlag         string
 	milestonePersonaFlag         string
+	milestoneAppFlag             string
 )
 
 var milestonesCmd = &cobra.Command{
@@ -35,6 +36,7 @@ var milestonesListCmd = &cobra.Command{
 
 		opts := api.ListMilestonesOptions{
 			Completed: milestoneCompletedFlag,
+			App:       milestoneAppFlag,
 			Project:   getProject(),
 		}
 
@@ -63,7 +65,11 @@ var milestonesListCmd = &cobra.Command{
 			if milestone.Completed {
 				completedStr = " [done]"
 			}
-			fmt.Printf("%s  %s%s%s\n", milestone.ID, milestone.Title, branchStr, completedStr)
+			if milestone.App != "" {
+				fmt.Printf("%s  %s%s%s  %s\n", milestone.ID, milestone.Title, branchStr, completedStr, milestone.App)
+			} else {
+				fmt.Printf("%s  %s%s%s\n", milestone.ID, milestone.Title, branchStr, completedStr)
+			}
 		}
 
 		return nil
@@ -92,6 +98,9 @@ var milestonesGetCmd = &cobra.Command{
 		fmt.Printf("ID: %s\n", milestone.ID)
 		if milestone.Completed {
 			fmt.Printf("Completed: yes\n")
+		}
+		if milestone.App != "" {
+			fmt.Printf("App: %s\n", milestone.App)
 		}
 		if milestone.Repo != "" {
 			fmt.Printf("Repo: %s\n", milestone.Repo)
@@ -145,12 +154,16 @@ var milestonesCreateCmd = &cobra.Command{
 		if milestoneTitleFlag == "" {
 			return fmt.Errorf("--title is required")
 		}
+		if milestoneAppFlag == "" {
+			return fmt.Errorf("--app is required (web, ios, or android)")
+		}
 
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
 
 		req := api.CreateMilestoneRequest{
 			Title:           milestoneTitleFlag,
 			Description:     milestoneDescriptionFlag,
+			App:             milestoneAppFlag,
 			Repo:            milestoneRepoFlag,
 			Branch:          milestoneBranchFlag,
 			Workflow:        milestoneWorkflowFlag,
@@ -185,6 +198,7 @@ var milestonesUpdateCmd = &cobra.Command{
 		req := api.UpdateMilestoneRequest{
 			Title:           milestoneTitleFlag,
 			Description:     milestoneDescriptionFlag,
+			App:             milestoneAppFlag,
 			Repo:            milestoneRepoFlag,
 			Branch:          milestoneBranchFlag,
 			Workflow:        milestoneWorkflowFlag,
@@ -345,6 +359,7 @@ func init() {
 
 	// List flags
 	milestonesListCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed milestones")
+	milestonesListCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "Filter by app (web, ios, android)")
 
 	// Create flags
 	milestonesCreateCmd.Flags().StringVar(&milestoneTitleFlag, "title", "", "Milestone title (required)")
@@ -353,6 +368,7 @@ func init() {
 	milestonesCreateCmd.Flags().StringVar(&milestoneBranchFlag, "branch", "", "Git branch name")
 	milestonesCreateCmd.Flags().StringVar(&milestoneWorkflowFlag, "workflow", "", "GitHub Actions workflow file")
 	milestonesCreateCmd.Flags().IntVar(&milestoneGithubMilestoneFlag, "github-milestone", 0, "GitHub milestone number")
+	milestonesCreateCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "App (web, ios, android)")
 	milestonesCreateCmd.Flags().StringVar(&milestoneAssigneesFlag, "assignees", "", "Comma-separated list of assignee IDs")
 
 	// Update flags
@@ -362,6 +378,7 @@ func init() {
 	milestonesUpdateCmd.Flags().StringVar(&milestoneBranchFlag, "branch", "", "Git branch name (empty to remove)")
 	milestonesUpdateCmd.Flags().StringVar(&milestoneWorkflowFlag, "workflow", "", "GitHub Actions workflow file (empty to remove)")
 	milestonesUpdateCmd.Flags().IntVar(&milestoneGithubMilestoneFlag, "github-milestone", 0, "GitHub milestone number (0 to remove)")
+	milestonesUpdateCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "App (web, ios, android)")
 
 	// Epics flags
 	milestonesEpicsCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed epics")
