@@ -30,7 +30,7 @@ var peopleListCmd = &cobra.Command{
 		}
 
 		for _, p := range people {
-			fmt.Printf("%d  %s\n", p.ID, p.Name)
+			fmt.Printf("%s  %s\n", p.ID, p.Name)
 		}
 		return nil
 	},
