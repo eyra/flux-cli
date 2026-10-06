@@ -1,5 +1,12 @@
 package api
 
+// Identity is the server-verified Basecamp principal for the active credentials.
+type Identity struct {
+	BasecampAccountID string `json:"basecamp_account_id"`
+	BasecampPersonID  string `json:"basecamp_person_id"`
+	DisplayName       string `json:"display_name"`
+}
+
 // Project represents a Flux project
 type Project struct {
 	Key  string `json:"key"`

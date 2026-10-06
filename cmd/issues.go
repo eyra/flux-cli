@@ -95,7 +95,7 @@ var issuesGetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
 
-		issue, err := client.GetIssue(args[0])
+		issue, err := client.GetIssue(args[0], getProject())
 		if err != nil {
 			return err
 		}

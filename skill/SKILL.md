@@ -170,6 +170,15 @@ flux auth status --json      # Check status
 
 Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. The old `FLUX_API_KEY` env var and `--api-key` flag still work for CI/CD.
 
+`auth status` verifies the active credentials through the selected server's
+`GET /api/dev/identity` endpoint. Credential precedence is `--api-key`, then
+`FLUX_API_KEY`, then saved personal credentials for the selected environment.
+Missing, invalid, or unverifiable authentication exits nonzero without success
+JSON; a local credential file alone is not proof of authentication.
+
+An explicit `--env` overrides `FLUX_ENV`, even `--env prod` when `FLUX_ENV=test`.
+Otherwise `FLUX_ENV` applies, then the default `prod`.
+
 ## Comment Formatting
 
 The server processes all comment content through the same pipeline as the MCP tools:
@@ -192,6 +201,29 @@ All commands support `--json`. Reads return the full resource object. Mutations 
 ```
 
 Use `--json` output to chain commands: extract the `id` field from create responses to use in subsequent link or advance calls.
+
+`flux auth status --json` returns only verified identity and environment fields:
+
+```json
+{"signed_in":true,"env":"prod","basecamp_account_id":"123","basecamp_person_id":"456","display_name":"Alex"}
+```
+
+Account and person IDs are strings. For API keys the identity is the actual bot
+principal, not a persona. No provider credentials or tokens are included.
+
+`flux issues get <id> --project <key> --json` scopes the issue lookup to that
+project; issues outside it return an error. Without `--project`, the default is
+`next` on prod and `flux` on test. Each `thread` comment preserves `author` and adds
+`author_id`, the Basecamp creator's string person ID. Missing creator IDs are
+omitted, never inferred from a name:
+
+```json
+{"id":"789","author":"Alex","author_id":"456","date":"2026-10-06","content":"Comment text"}
+```
+
+Names can be shared. Within the same Basecamp account, compare a comment's
+`author_id` to the verified `basecamp_person_id` to determine whether it belongs
+to the signed-in principal; do not compare display names or persona labels.
 
 ## Error Handling
 

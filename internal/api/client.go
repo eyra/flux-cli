@@ -40,10 +40,11 @@ type Issue struct {
 }
 
 type Comment struct {
-	ID      string `json:"id"`
-	Author  string `json:"author"`
-	Date    string `json:"date"`
-	Content string `json:"content"`
+	ID       string  `json:"id"`
+	Author   string  `json:"author"`
+	AuthorID *string `json:"author_id,omitempty"`
+	Date     string  `json:"date"`
+	Content  string  `json:"content"`
 }
 
 type AdvanceResult struct {
@@ -130,6 +131,32 @@ func (c *Client) handleResponseError(resp *http.Response, action string) error {
 	}
 }
 
+func (c *Client) GetIdentity() (*Identity, error) {
+	if c.apiKey == "" {
+		return nil, ErrUnauthorized
+	}
+
+	resp, err := c.get("/api/dev/identity")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch identity: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "fetch identity")
+	}
+
+	var identity Identity
+	if err := json.NewDecoder(resp.Body).Decode(&identity); err != nil {
+		return nil, fmt.Errorf("failed to decode identity: %w", err)
+	}
+	if identity.BasecampAccountID == "" || identity.BasecampPersonID == "" || identity.DisplayName == "" {
+		return nil, errors.New("incomplete identity response")
+	}
+
+	return &identity, nil
+}
+
 type IssuesResponse struct {
 	Issues []Issue `json:"issues"`
 }
@@ -175,8 +202,11 @@ func (c *Client) ListIssues(opts ListIssuesOptions) ([]Issue, error) {
 	return response.Issues, nil
 }
 
-func (c *Client) GetIssue(id string) (*Issue, error) {
+func (c *Client) GetIssue(id, project string) (*Issue, error) {
 	endpoint := fmt.Sprintf("/api/dev/issues/%s", url.PathEscape(id))
+	if project != "" {
+		endpoint += "?" + url.Values{"project": {project}}.Encode()
+	}
 
 	resp, err := c.get(endpoint)
 	if err != nil {

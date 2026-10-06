@@ -19,7 +19,7 @@ var (
 
 func getEnv() string {
 	// Flag takes precedence, then env var, then default
-	if envFlag != "" && envFlag != "prod" {
+	if rootCmd.PersistentFlags().Changed("env") {
 		return envFlag
 	}
 	if env := os.Getenv("FLUX_ENV"); env != "" {

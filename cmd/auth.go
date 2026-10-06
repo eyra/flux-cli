@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/eyra/flux-cli/internal/api"
 	"github.com/eyra/flux-cli/internal/auth"
 	"github.com/spf13/cobra"
 )
@@ -55,28 +56,26 @@ var authStatusCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		env := getEnv()
 
-		creds, err := auth.Load(env)
-		if err != nil || creds == nil {
-			if jsonFlag {
-				data, _ := json.MarshalIndent(map[string]interface{}{"signed_in": false, "env": env}, "", "  ")
-				fmt.Println(string(data))
-			} else {
-				fmt.Printf("Not signed in (%s)\n", env)
-				fmt.Println("Run 'flux auth login' to sign in.")
-			}
-			return nil
+		client := api.NewClient(baseURLForEnv(env), getAPIKey())
+		identity, err := client.GetIdentity()
+		if err != nil {
+			return err
 		}
 
 		if jsonFlag {
-			data, _ := json.MarshalIndent(map[string]interface{}{
-				"signed_in":  true,
-				"env":        env,
-				"expires_at": creds.ExpiresAt,
-			}, "", "  ")
-			fmt.Println(string(data))
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(struct {
+				SignedIn bool   `json:"signed_in"`
+				Env      string `json:"env"`
+				*api.Identity
+			}{
+				SignedIn: true,
+				Env:      env,
+				Identity: identity,
+			})
 		} else {
-			fmt.Printf("Signed in (%s)\n", env)
-			fmt.Printf("Token expires: %s\n", creds.ExpiresAt.Format("2006-01-02 15:04"))
+			cmd.Printf("Signed in as %s (%s)\n", identity.DisplayName, env)
+			cmd.Printf("Basecamp account: %s\n", identity.BasecampAccountID)
+			cmd.Printf("Basecamp person: %s\n", identity.BasecampPersonID)
 		}
 		return nil
 	},
