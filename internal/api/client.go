@@ -178,15 +178,14 @@ func (c *Client) ListIssues(opts ListIssuesOptions) ([]Issue, error) {
 func (c *Client) GetIssue(id string) (*Issue, error) {
 	endpoint := fmt.Sprintf("/api/dev/issues/%s", url.PathEscape(id))
 
-	resp, err := c.httpClient.Get(c.baseURL + endpoint)
+	resp, err := c.get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch issue: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+		return nil, c.handleResponseError(resp, "fetch issue")
 	}
 
 	var issue Issue
@@ -223,15 +222,14 @@ func (c *Client) ListPersonas(opts *ListPersonasOptions) ([]Persona, error) {
 		endpoint = endpoint + "?" + params.Encode()
 	}
 
-	resp, err := c.httpClient.Get(c.baseURL + endpoint)
+	resp, err := c.get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch personas: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+		return nil, c.handleResponseError(resp, "fetch personas")
 	}
 
 	var response PersonasResponse

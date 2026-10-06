@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	envFlag    string
-	jsonFlag   bool
-	apiKeyFlag string
+	envFlag     string
+	jsonFlag    bool
+	apiKeyFlag  string
 	projectFlag string
 )
 
@@ -105,6 +105,6 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&envFlag, "env", "e", "prod", "Environment: prod or test")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as JSON")
-	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key for write operations (or use FLUX_API_KEY env var)")
+	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key for API requests (or use FLUX_API_KEY env var)")
 	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", "Project key: flux or next (default: next on prod, flux on test)")
 }
