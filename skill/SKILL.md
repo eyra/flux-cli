@@ -1,8 +1,8 @@
 ---
 name: flux
 description: |
-  Manage Flux project issues, epics, milestones, and AppSignal incidents via the Flux CLI.
-  Use for ANY question or action about Flux issues, epics, milestones, personas, or incidents.
+  Manage Flux project issues, epics, milestones, scenes, use cases, and AppSignal incidents via the Flux CLI.
+  Use for ANY question or action about Flux issues, epics, milestones, scenes, use cases, personas, or incidents.
 triggers:
   - flux issue
   - flux epic
@@ -10,6 +10,10 @@ triggers:
   - flux issues
   - flux epics
   - flux milestones
+  - flux scene
+  - flux scenes
+  - flux use case
+  - flux usecases
   - /flux
   - list issues
   - create issue
@@ -20,6 +24,11 @@ triggers:
   - create epic
   - list milestones
   - create milestone
+  - list scenes
+  - create scene
+  - list use cases
+  - create use case
+  - link use case
   - flux incident
   - appsignal incident
 invocable: true
@@ -34,80 +43,102 @@ CLI for managing issues, epics, milestones, scenes, use cases, and AppSignal inc
 
 **MUST follow these rules:**
 
-1. **Always use `--json`** for data extraction and confirmation of mutations. Only omit it when presenting results directly to a human in prose.
-2. **Two environments** — `prod` (default) manages the Next Platform project; `--env test` manages the Flux Platform project itself. When the user asks about Flux's own issues/epics, always add `--env test`.
-3. **Two projects** — `--project flux` for Flux Platform issues; `--project next` for Next Platform issues. Default is `next` on prod, `flux` on `--env test`. Pass `--project` explicitly when it differs from the default.
-4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login [--env test]` and retry.
-5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `--title` on the advance or update command to set it.
-6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID.
-7. **Persona attribution** — use `--persona <name>` on create/update/comment/advance commands when acting on behalf of an AI persona (e.g. `--persona sam`).
+1. **Use the Flux CLI only** — never invoke Flux MCP tools or restore an MCP connection. Always pass `--env prod --project <key> --json` for operational commands. Only omit `--json` when presenting results directly to a human in prose.
+2. **Production is the source of truth** — production contains the Flux, Next, and Feldspar backlogs. Use `--env test` only for explicitly requested verification against the test deployment, never to manage Flux's real backlog.
+3. **Select the project explicitly** — use `flux` for Flux Platform, `next` for Next Platform, and `feldspar` for Feldspar. Production also has `devops`, `scriptdev`, and `website`. Resolve the key from the request or project configuration; do not rely on CLI defaults or its outdated two-project help text. Discover available projects with `flux projects list --env prod --project <key> --json` using a known key.
+4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login --env prod --project <key> --json` and retry. For explicit test verification, authenticate to `--env test` instead.
+5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `issues update --title`; `issues advance` does not accept `--title`.
+6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID. Scenes and use cases also take their code (`SCN-Next-02`, `UC-NEXT-01`).
+7. **Persona attribution** — use `--persona <name>` on issue create/update/comment/advance commands when acting on behalf of an AI persona (e.g. `--persona sam`).
+8. **Model attribution** — content-writing commands support `--ai-model <model>` for a caller-declared footer. Preserve it when supplied; do not invent a model identity. It is independent of `--persona`.
 
 ## Quick Reference
 
+Replace `<key>` with the resolved production project key in every example. Scenes and use cases exist only in projects with a Product to-do set (today `next`).
+
 | Task | Command |
 |------|---------|
-| Sign in | `flux auth login [--env test]` |
-| Auth status | `flux auth status [--env test] --json` |
-| List projects | `flux projects list --json` |
-| List people | `flux people list --json` |
-| List issues | `flux issues list --json [--stage testing] [--app web]` |
-| Get issue | `flux issues get <id> --json` |
-| Create issue | `flux issues create --title "..." --app web [--stage specification] [--program dev] [--size M] --json` |
-| Update issue | `flux issues update <id> --title "..." [--app ios] --json` |
-| Advance issue | `flux issues advance <id> --stage testing --comment "..." --json` |
-| Assign issue | `flux issues assign <id> --assignees <person_id,...> --json` |
-| Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --json` |
-| Add comment | `flux issues comment <id> --content "..." --json` |
-| Update comment | `flux comments update <comment_id> --content "..." --json` |
-| Delete comment | `flux comments delete <comment_id> --json` |
-| Delete issue | `flux issues delete <id> --json` |
-| List epics | `flux epics list --json` |
-| Get epic | `flux epics get <id> --json` |
-| Create epic | `flux epics create --title "..." --json` |
-| List epic issues | `flux epics issues <id> --json` |
-| Resync epic linked issues | `flux epics resync <id> --json` |
-| List milestones | `flux milestones list --json [--app ios]` |
-| Get milestone | `flux milestones get <id> --json` |
-| Resync milestone linked issues | `flux milestones resync <id> --json` |
-| List personas | `flux personas list --json` |
-| Upload image | `flux images upload --file <path> [--caption "..."] --json` |
-| Render diagram | `flux diagrams render --file <path.mmd> --json` |
-| Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --json` |
-| List scenes | `flux scenes list --json [--completed]` |
-| Get scene | `flux scenes get <id-or-code> --json` |
-| Create scene | `flux scenes create --title "..." --area Next [--status ...] --json` |
-| Use cases of a scene | `flux scenes usecases <id-or-code> --json` |
-| List use cases | `flux usecases list --json [--scene <id-or-code>]` |
-| Get use case | `flux usecases get <id-or-code> --json` |
-| Create use case | `flux usecases create --title "..." --area NEXT [--scene <id-or-code>] --json` |
-| Link use case to scene | `flux usecases link <id-or-code> --target-type scene --target-id <scene> --json` |
-| Unlink use case | `flux usecases unlink <id-or-code> --target-type scene --target-id <scene> --json` |
-| Issues of a use case | `flux usecases issues <id-or-code> --json` |
-| Link issue to use case | `flux issues link <id> --target-type usecase --target-id <use-case> --json` |
-| Resync linked titles | `flux scenes resync <id-or-code> --json` / `flux usecases resync <id-or-code> --json` |
-| AppSignal apps | `flux appsignal apps --json` |
-| AppSignal incidents | `flux appsignal incidents list --app <app> --json` |
-
-## Scenes and Use Cases
-
-Scene → Use Case → Issue, from the project's Product to-do set. Each child has
-at most one parent; linking to another parent moves it. Scenes and use cases
-take Basecamp IDs or codes (`SCN-Next-02`, legacy `UJ-Next-02`, `UC-NEXT-01`).
-`create`, `update` and `comment` take `--ai-model`; `update --status none`
-moves an item out of its group. Use cases are completed by hand in Basecamp.
-A project without Product configured fails with `product_not_configured`; an
-older server fails with "not supported by this server".
+| Sign in | `flux auth login --env prod --project <key> --json` |
+| Auth status | `flux auth status --env prod --project <key> --json` |
+| List projects | `flux projects list --env prod --project <key> --json` |
+| List people | `flux people list --env prod --project <key> --json` |
+| List issues | `flux issues list --env prod --project <key> --json [--stage testing]` |
+| Get issue | `flux issues get <id> --env prod --project <key> --json` |
+| Create issue | `flux issues create --title "..." [--stage specification] [--program dev] [--size M] --env prod --project <key> --json` |
+| Update issue | `flux issues update <id> --title "..." --env prod --project <key> --json` |
+| Advance issue | `flux issues advance <id> --stage testing --comment "..." --env prod --project <key> --json` |
+| Assign issue | `flux issues assign <id> --assignees <person_id,...> --env prod --project <key> --json` |
+| Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --env prod --project <key> --json` |
+| Link issue to use case | `flux issues link <id> --target-type usecase --target-id <use-case> --env prod --project next --json` |
+| Add comment | `flux issues comment <id> --content "..." --env prod --project <key> --json` |
+| Update comment | `flux comments update <comment_id> --content "..." --env prod --project <key> --json` |
+| Delete comment | `flux comments delete <comment_id> --env prod --project <key> --json` |
+| Delete issue | `flux issues delete <id> --env prod --project <key> --json` |
+| List epics | `flux epics list --env prod --project <key> --json` |
+| Get epic | `flux epics get <id> --env prod --project <key> --json` |
+| Create epic | `flux epics create --title "..." --env prod --project <key> --json` |
+| List epic issues | `flux epics issues <id> --env prod --project <key> --json` |
+| Resync epic linked issues | `flux epics resync <id> --env prod --project <key> --json` |
+| List milestones | `flux milestones list --env prod --project <key> --json` |
+| Get milestone | `flux milestones get <id> --env prod --project <key> --json` |
+| Resync milestone linked issues | `flux milestones resync <id> --env prod --project <key> --json` |
+| List scenes | `flux scenes list [--completed] --env prod --project next --json` |
+| Get scene | `flux scenes get <id-or-code> [--no-thread] --env prod --project next --json` |
+| Create scene | `flux scenes create --title "..." --area Next [--status ...] --env prod --project next --json` |
+| Update scene | `flux scenes update <id-or-code> [--title ...] [--code ...] [--status ...] --env prod --project next --json` |
+| Comment on scene | `flux scenes comment <id-or-code> --content "..." --env prod --project next --json` |
+| Use cases of a scene | `flux scenes usecases <id-or-code> --env prod --project next --json` |
+| Resync scene linked use cases | `flux scenes resync <id-or-code> --env prod --project next --json` |
+| List use cases | `flux usecases list [--scene <id-or-code>] [--completed] --env prod --project next --json` |
+| Get use case | `flux usecases get <id-or-code> [--no-thread] --env prod --project next --json` |
+| Create use case | `flux usecases create --title "..." --area NEXT [--scene <id-or-code>] --env prod --project next --json` |
+| Update use case | `flux usecases update <id-or-code> [--title ...] [--code ...] [--status ...] --env prod --project next --json` |
+| Comment on use case | `flux usecases comment <id-or-code> --content "..." --env prod --project next --json` |
+| Link use case to scene | `flux usecases link <id-or-code> --target-type scene --target-id <scene> --env prod --project next --json` |
+| Unlink use case | `flux usecases unlink <id-or-code> --target-type scene --target-id <scene> --env prod --project next --json` |
+| Issues of a use case | `flux usecases issues <id-or-code> --env prod --project next --json` |
+| Resync use case linked issues | `flux usecases resync <id-or-code> --env prod --project next --json` |
+| List personas | `flux personas list --env prod --project <key> --json` |
+| Upload image | `flux images upload --file <path> [--caption "..."] --env prod --project <key> --json` |
+| Render diagram | `flux diagrams render --file <path.mmd> --env prod --project <key> --json` |
+| Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --env prod --project <key> --json` |
+| AppSignal apps | `flux appsignal apps --env prod --project <key> --json` |
+| AppSignal incidents | `flux appsignal incidents list --app <app> --env prod --project <key> --json` |
 
 ## Environment & Project Selection
 
-```
-Flux Platform issues (our own backlog):
-  flux issues list --env test --json        (flux is default project on test)
-  flux issues list --project flux --json    (explicit, works on prod too)
+```bash
+# Flux Platform backlog
+flux issues list --env prod --project flux --json
 
-Next Platform issues (what Flux manages):
-  flux issues list --json                   (next is default project on prod)
+# Next Platform backlog
+flux issues list --env prod --project next --json
+
+# Feldspar backlog
+flux issues list --env prod --project feldspar --json
 ```
+
+For explicitly requested test-deployment verification only, substitute `--env test` and select the relevant test project explicitly. A product's deployment/testing stage does not change the tracker environment: real work remains in production.
+
+## Scenes and Use Cases
+
+Projects with a Product to-do set plan product work as **Scene → Use Case → Issue**.
+
+- **Scene** (formerly "User Journey"): an actor-centred view of the system with one angle and one zoom level; the actor isn't necessarily human. Scenes together make up the whole system and may overlap. Written by the business developer.
+- **Use Case**: part of a Scene worked out as a complete software design (main success scenario, alternative flows, exceptions). Each can ship to production on its own. Written by the software designer.
+- **Issue**: delivery work that implements (part of) a Use Case.
+
+**Codes** start the title: `SCN-<Area>-NN` for scenes (legacy `UJ-<Area>-NN` is still accepted) and `UC-<AREA>-NN` for use cases. Matching ignores case and leading zeros; `xx` marks an unnumbered draft. Don't pick numbers yourself: `create --area <Area>` gives the title the next free code, `--code` sets one explicitly, and a title that already starts with a code keeps it.
+
+**Rules:**
+- Each child has at most one parent: a use case belongs to one scene, an issue to one use case. Linking to another parent moves the child.
+- A use case is optional on an issue. Link product work to its use case when one exists; bugs, chores and triage findings may have none. Epics and milestones still work as before, next to the use case.
+- Scenes and use cases are completed by hand in Basecamp; there is no complete command.
+- `--status` is the name of a to-do list group (for example `Refine`, `Ready to pick up`); `update --status none` moves the item out of its group. Status is reported as the group name, `done` once completed, or `null`.
+- Links live in the "Managed by Flux" section of both to-dos. Never edit it by hand; use `link`/`unlink`.
+- A parent holds a copy of each child's title. After renaming children, run `resync` on the parent.
+
+A project without a Product to-do set fails with `product_not_configured`; an older server fails with "not supported by this server".
 
 ## Issue Stages
 
@@ -121,8 +152,8 @@ Stage emojis (add to title when advancing beyond specification):
 
 ```bash
 # Advance to development (add emoji to title)
-flux issues advance <id> --stage development --comment "Starting implementation" --json
-flux issues update <id> --title "[Dev] Fix the thing 💻" --json
+flux issues advance <id> --stage development --comment "Starting implementation" --env prod --project <key> --json
+flux issues update <id> --title "[Dev] Fix the thing 💻" --env prod --project <key> --json
 ```
 
 ## Common Workflows
@@ -136,27 +167,48 @@ flux issues create \
   --stage development \
   --program dev \
   --size M \
-  --app web \
-  --json
+  --env prod --project <key> --json
 
 # Link to epic (use ID from create response)
-flux issues link <issue_id> --target-type epic --target-id <epic_id> --json
+flux issues link <issue_id> --target-type epic --target-id <epic_id> --env prod --project <key> --json
+```
+
+### Break a use case down into issues
+
+```bash
+# Read the use case and the issues it already has
+flux usecases get UC-NEXT-01 --env prod --project next --json
+flux usecases issues UC-NEXT-01 --env prod --project next --json
+
+# Create an issue and link it to the use case (use ID from create response)
+flux issues create --title "[Web] Confirm account link during sign-in" --stage specification --env prod --project next --json
+flux issues link <issue_id> --target-type usecase --target-id UC-NEXT-01 --env prod --project next --json
+```
+
+### Add a use case to a scene
+
+```bash
+# Numbered with the next free UC-NEXT-NN code and linked to the scene in one step
+flux usecases create --title "Link existing account during SURFconext sign-in" --area NEXT --scene SCN-Next-02 --env prod --project next --json
+
+# Or link an existing use case (moves it if it had another scene)
+flux usecases link UC-NEXT-01 --target-type scene --target-id SCN-Next-02 --env prod --project next --json
 ```
 
 ### Advance an issue through stages
 
 ```bash
 # Specification → Design
-flux issues advance <id> --stage design --json
-flux issues update <id> --title "[Web] Fix the thing ✏️" --json
+flux issues advance <id> --stage design --env prod --project <key> --json
+flux issues update <id> --title "[Web] Fix the thing ✏️" --env prod --project <key> --json
 
 # Design → Development
-flux issues advance <id> --stage development --comment "Design approved" --json
-flux issues update <id> --title "[Web] Fix the thing 💻" --json
+flux issues advance <id> --stage development --comment "Design approved" --env prod --project <key> --json
+flux issues update <id> --title "[Web] Fix the thing 💻" --env prod --project <key> --json
 
 # Development → Testing
-flux issues advance <id> --stage testing --comment "PR #42 merged" --json
-flux issues update <id> --title "[Web] Fix the thing 🧪" --json
+flux issues advance <id> --stage testing --comment "PR #42 merged" --env prod --project <key> --json
+flux issues update <id> --title "[Web] Fix the thing 🧪" --env prod --project <key> --json
 ```
 
 ### Add a comment with persona attribution
@@ -165,35 +217,34 @@ flux issues update <id> --title "[Web] Fix the thing 🧪" --json
 flux issues comment <id> \
   --content "Investigated root cause: the session store is evicting tokens too early." \
   --persona sam \
-  --json
+  --env prod --project <key> --json
 ```
 
 ### Check AppSignal incidents
 
 ```bash
 # List available apps
-flux appsignal apps --json
+flux appsignal apps --env prod --project <key> --json
 
 # List open incidents
-flux appsignal incidents list --app <app_name> --state open --json
+flux appsignal incidents list --app <app_name> --state open --env prod --project <key> --json
 
 # Get incident details
-flux appsignal incidents get --app <app_name> --number <N> --json
+flux appsignal incidents get --app <app_name> --number <N> --env prod --project <key> --json
 ```
 
 ## Auth
 
 ```bash
-flux auth login              # Sign in to prod (Next project)
-flux auth login --env test   # Sign in to test (Flux project)
-flux auth logout             # Sign out
-flux auth status --json      # Check status
+flux auth login --env prod --project <key> --json   # Sign in to production
+flux auth logout --env prod --project <key> --json  # Sign out of production
+flux auth status --env prod --project <key> --json  # Check production status
 ```
 
 Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. The old `FLUX_API_KEY` env var and `--api-key` flag still work for CI/CD.
 
 `auth status` verifies the active credentials through the selected server's
-`GET /api/dev/identity` endpoint. Credential precedence is `--api-key`, then
+`GET /api/delivery/identity` endpoint. Credential precedence is `--api-key`, then
 `FLUX_API_KEY`, then saved personal credentials for the selected environment.
 Missing, invalid, or unverifiable authentication exits nonzero without success
 JSON; a local credential file alone is not proof of authentication.
@@ -203,7 +254,7 @@ Otherwise `FLUX_ENV` applies, then the default `prod`.
 
 ## Comment Formatting
 
-The server processes all comment content through the same pipeline as the MCP tools:
+The server processes comment and description content submitted through the CLI:
 
 1. **Plain text** is automatically converted — newlines become `<br>`, blank lines become paragraph breaks, and common Markdown syntax is converted to HTML:
    - `**bold**` → `<strong>bold</strong>`
@@ -227,13 +278,14 @@ Supported content writes:
 - `flux issues create` / `update` with `--description`
 - `flux epics create` / `update` with `--description`
 - `flux milestones create` / `update` with `--description`
-- `flux issues comment`, `flux epics comment`, `flux milestones comment`
+- `flux scenes create` / `update` and `flux usecases create` / `update` with `--description`
+- `flux issues comment`, `flux epics comment`, `flux milestones comment`, `flux scenes comment`, `flux usecases comment`
 - `flux comments update`
 - `flux issues advance` for its optional `--comment` only, not its automatic stage comment
 
 ```bash
-flux issues comment <id> --content "Investigated the failure." --persona sam --ai-model "openai/gpt-5" --json
-flux comments update <comment_id> --content "Revised findings." --ai-model "anthropic/claude-sonnet-4" --json
+flux issues comment <id> --content "Investigated the failure." --persona sam --ai-model "openai/gpt-5" --env prod --project <key> --json
+flux comments update <comment_id> --content "Revised findings." --ai-model "anthropic/claude-sonnet-4" --env prod --project <key> --json
 ```
 
 The flag is local to these commands, not available on reads, deletes, links,
@@ -257,8 +309,8 @@ given. An advance without `--comment` does not attribute any user text.
 
 All commands support `--json`. Reads return the server's full resource object,
 with every field it sends (issues include `ref`, `epic`, `milestone`, `use_case`
-and `url`). Scene and use case writes, links and resyncs return the server's
-response. Other mutations return:
+and `url`; use cases include `scene`). Scene and use case writes, links and
+resyncs return the server's response. Other mutations return:
 
 ```json
 {"ok": "true", "id": "<id>"}
@@ -275,11 +327,11 @@ Use `--json` output to chain commands: extract the `id` field from create respon
 Account and person IDs are strings. For API keys the identity is the actual bot
 principal, not a persona. No provider credentials or tokens are included.
 
-`flux issues get <id> --project <key> --json` scopes the issue lookup to that
-project; issues outside it return an error. Without `--project`, the default is
-`next` on prod and `flux` on test. Each `thread` comment preserves `author` and adds
-`author_id`, the Basecamp creator's string person ID. Missing creator IDs are
-omitted or `null` as the server sends them, never inferred from a name:
+`flux issues get <id> --env prod --project <key> --json` scopes the issue lookup
+to that project; issues outside it return an error. Each `thread` comment
+preserves `author` and adds `author_id`, the Basecamp creator's string person ID.
+Missing creator IDs are omitted or `null` as the server sends them, never
+inferred from a name:
 
 ```json
 {"id":"789","author":"Alex","author_id":"456","date":"2026-10-06","content":"Comment text"}
@@ -293,9 +345,10 @@ to the signed-in principal; do not compare display names or persona labels.
 
 | Error | Fix |
 |-------|-----|
-| `unauthorized: run 'flux auth login'` | Run `flux auth login [--env test]` |
-| `not found` | Verify the ID exists for the current env/project |
-| `product_not_configured` | The project has no scenes or use cases; pick another `--project` |
+| `unauthorized` | Run `flux auth login --env prod --project <key> --json` (use `--env test` only for explicit test verification) |
+| `not found` | Verify the ID or code exists in the selected project |
+| `ambiguous_code` | Several items share the code (e.g. an `xx` draft); use the Basecamp ID |
+| `product_not_configured` | The project has no scenes or use cases; check `--project` |
 | `not supported by this server` | The server is older than the CLI; wait for the server release |
 | Non-zero exit | Check stderr for the error message |
 
