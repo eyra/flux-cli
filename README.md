@@ -62,10 +62,58 @@ string person ID as `author_id`:
 {"id":"789","author":"Alex","author_id":"456","date":"2026-10-06","content":"Comment text"}
 ```
 
-When the creator ID is unavailable, `author_id` is omitted. Names are not unique;
+When the creator ID is unavailable, `author_id` is omitted or `null`, exactly as
+the server sends it: `--json` output repeats the server's JSON and keeps every
+field, including `ref`, `epic`, `milestone`, `use_case` and `url`. Names are not unique;
 compare `author_id` with verified `basecamp_person_id` to identify the signed-in
 person's comments, within the same Basecamp account. Do not derive identity from
 the name or persona attribution.
+
+### Scenes and use cases
+
+Scenes and use cases live in a project's Product to-do set. The model is
+Scene → Use Case → Issue: an issue belongs to at most one use case, and a use
+case to at most one scene. IDs may be Basecamp IDs or codes: `SCN-Next-02`
+(legacy `UJ-Next-02` works too) or `UC-NEXT-01`.
+
+```bash
+# Scenes
+flux scenes list [--completed]
+flux scenes get SCN-Next-02 [--no-thread]
+flux scenes create --title "Donate data" --area Next [--code SCN-Next-04] [--status Refine] [--description ...]
+flux scenes update SCN-Next-02 [--title ...] [--code ...] [--status none] [--description ...]
+flux scenes comment SCN-Next-02 --content "..."
+flux scenes usecases SCN-Next-02      # use cases linked to the scene
+flux scenes resync SCN-Next-02        # refresh the linked use case titles
+
+# Use cases
+flux usecases list [--scene SCN-Next-02] [--completed]
+flux usecases get UC-NEXT-01 [--no-thread]
+flux usecases create --title "Upload data" --area NEXT [--scene SCN-Next-02]
+flux usecases update UC-NEXT-01 [--title ...] [--code ...] [--status ...] [--description ...]
+flux usecases comment UC-NEXT-01 --content "..."
+flux usecases link UC-NEXT-01 --target-type scene --target-id SCN-Next-02
+flux usecases unlink UC-NEXT-01 --target-type scene --target-id SCN-Next-02
+flux usecases issues UC-NEXT-01       # issues linked to the use case
+flux usecases resync UC-NEXT-01       # refresh the linked issue titles
+
+# Issues
+flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
+```
+
+On create, the title gets `--code`, else the code it already starts with, else
+the next free code in `--area`. `--status` is the name of a group in the list;
+on update, `--status none` moves the item out of its group. Use cases are
+completed by hand in Basecamp.
+
+A project without a Product to-do set returns a `product_not_configured` error.
+A server older than this CLI returns "not supported by this server".
+
+### API namespaces
+
+The CLI calls `/api/delivery` for issues, milestones and epics, and
+`/api/product` for scenes and use cases. Against an older server without
+`/api/delivery` it falls back to `/api/dev` automatically.
 
 ### List personas
 
@@ -82,7 +130,8 @@ flux issues comment 12345 --content "Investigated the failure." --ai-model "open
 flux comments update 67890 --content "Updated findings." --ai-model "anthropic/claude-sonnet-4" --json
 ```
 
-Supported commands are `issues`, `epics`, and `milestones` **create**, **update**
+Supported commands are `issues`, `epics`, `milestones`, `scenes`, and `usecases`
+**create**, **update**
 (for supplied descriptions), and **comment**; **comments update**; and
 **issues advance** (for its optional `--comment`, not the automatic stage comment).
 The flag is not global and is unavailable on reads, deletes, links, assignments,
@@ -134,4 +183,7 @@ go build -o flux .
 
 # Run
 ./flux issues list --env test
+
+# Run against a local server
+FLUX_BASE_URL=http://localhost:4040 ./flux scenes list --project next --api-key <key>
 ```

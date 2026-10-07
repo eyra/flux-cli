@@ -29,6 +29,10 @@ func getEnv() string {
 }
 
 func baseURLForEnv(env string) string {
+	// FLUX_BASE_URL points the CLI at another server, e.g. a local one.
+	if url := os.Getenv("FLUX_BASE_URL"); url != "" {
+		return url
+	}
 	if env == "test" {
 		return "https://eyra-flux-test.fly.dev"
 	}
@@ -82,6 +86,28 @@ func printOK(fields ...string) {
 		m[fields[i]] = fields[i+1]
 	}
 	data, _ := json.MarshalIndent(m, "", "  ")
+	fmt.Println(string(data))
+}
+
+// printServerOK prints a server's JSON object response with the "ok" field
+// and the given fields added, unless the server already sent them.
+func printServerOK(response json.RawMessage, fields ...string) {
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(response, &m); err != nil || m == nil {
+		m = map[string]interface{}{}
+	}
+	m["ok"] = "true"
+	for i := 0; i+1 < len(fields); i += 2 {
+		if _, exists := m[fields[i]]; !exists {
+			m[fields[i]] = fields[i+1]
+		}
+	}
+	printJSON(m)
+}
+
+// printJSON prints v as indented JSON.
+func printJSON(v interface{}) {
+	data, _ := json.MarshalIndent(v, "", "  ")
 	fmt.Println(string(data))
 }
 

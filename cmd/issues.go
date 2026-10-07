@@ -109,6 +109,9 @@ var issuesGetCmd = &cobra.Command{
 		// Human-readable output
 		fmt.Printf("# %s\n\n", issue.Title)
 		fmt.Printf("ID: %s\n", issue.ID)
+		if issue.Ref != "" {
+			fmt.Printf("Ref: %s\n", issue.Ref)
+		}
 		fmt.Printf("Stage: %s", issue.Stage)
 		if issue.SubStage != "" {
 			fmt.Printf(" > %s", issue.SubStage)
@@ -126,6 +129,18 @@ var issuesGetCmd = &cobra.Command{
 		}
 		if issue.App != "" {
 			fmt.Printf("App: %s\n", issue.App)
+		}
+		if issue.Epic != "" {
+			fmt.Printf("Epic: %s\n", issue.Epic)
+		}
+		if issue.Milestone != "" {
+			fmt.Printf("Milestone: %s\n", issue.Milestone)
+		}
+		if issue.UseCase != "" {
+			fmt.Printf("Use case: %s\n", issue.UseCase)
+		}
+		if issue.URL != "" {
+			fmt.Printf("URL: %s\n", issue.URL)
 		}
 		if len(issue.Assignees) > 0 {
 			names := make([]string, len(issue.Assignees))
@@ -326,7 +341,7 @@ var issuesAdvanceCmd = &cobra.Command{
 
 var issuesLinkCmd = &cobra.Command{
 	Use:   "link [id]",
-	Short: "Link an issue to an epic or milestone",
+	Short: "Link an issue to an epic, milestone or use case",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if issueTargetTypeFlag == "" || issueTargetIDFlag == "" {
@@ -347,12 +362,13 @@ var issuesLinkCmd = &cobra.Command{
 			Project:    getProject(),
 		}
 
-		if err := client.LinkIssue(args[0], req); err != nil {
+		result, err := client.LinkIssue(args[0], req)
+		if err != nil {
 			return err
 		}
 
 		if jsonFlag {
-			printOK("id", args[0])
+			printServerOK(result, "id", args[0])
 		} else if issueUnlinkFlag {
 			fmt.Printf("Unlinked issue %s from %s %s\n", args[0], issueTargetTypeFlag, issueTargetIDFlag)
 		} else {
@@ -440,8 +456,8 @@ func init() {
 	issuesAdvanceCmd.Flags().String("ai-model", "", "Caller-declared model for the optional comment footer")
 
 	// Link flags
-	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic or milestone (required)")
-	issuesLinkCmd.Flags().StringVar(&issueTargetIDFlag, "target-id", "", "Target ID (required)")
+	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic, milestone or usecase (required)")
+	issuesLinkCmd.Flags().StringVar(&issueTargetIDFlag, "target-id", "", "Target ID or, for a use case, its code (required)")
 	issuesLinkCmd.Flags().BoolVar(&issueUnlinkFlag, "unlink", false, "Unlink instead of link")
 
 	// Assign flags

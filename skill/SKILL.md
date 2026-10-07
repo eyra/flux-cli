@@ -28,7 +28,7 @@ argument-hint: "[action] [args...]"
 
 # /flux - Flux Project Management
 
-CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
+CLI for managing issues, epics, milestones, scenes, use cases, and AppSignal incidents in Flux.
 
 ## Agent Invariants
 
@@ -73,8 +73,30 @@ CLI for managing issues, epics, milestones, and AppSignal incidents in Flux.
 | Upload image | `flux images upload --file <path> [--caption "..."] --json` |
 | Render diagram | `flux diagrams render --file <path.mmd> --json` |
 | Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --json` |
+| List scenes | `flux scenes list --json [--completed]` |
+| Get scene | `flux scenes get <id-or-code> --json` |
+| Create scene | `flux scenes create --title "..." --area Next [--status ...] --json` |
+| Use cases of a scene | `flux scenes usecases <id-or-code> --json` |
+| List use cases | `flux usecases list --json [--scene <id-or-code>]` |
+| Get use case | `flux usecases get <id-or-code> --json` |
+| Create use case | `flux usecases create --title "..." --area NEXT [--scene <id-or-code>] --json` |
+| Link use case to scene | `flux usecases link <id-or-code> --target-type scene --target-id <scene> --json` |
+| Unlink use case | `flux usecases unlink <id-or-code> --target-type scene --target-id <scene> --json` |
+| Issues of a use case | `flux usecases issues <id-or-code> --json` |
+| Link issue to use case | `flux issues link <id> --target-type usecase --target-id <use-case> --json` |
+| Resync linked titles | `flux scenes resync <id-or-code> --json` / `flux usecases resync <id-or-code> --json` |
 | AppSignal apps | `flux appsignal apps --json` |
 | AppSignal incidents | `flux appsignal incidents list --app <app> --json` |
+
+## Scenes and Use Cases
+
+Scene → Use Case → Issue, from the project's Product to-do set. Each child has
+at most one parent; linking to another parent moves it. Scenes and use cases
+take Basecamp IDs or codes (`SCN-Next-02`, legacy `UJ-Next-02`, `UC-NEXT-01`).
+`create`, `update` and `comment` take `--ai-model`; `update --status none`
+moves an item out of its group. Use cases are completed by hand in Basecamp.
+A project without Product configured fails with `product_not_configured`; an
+older server fails with "not supported by this server".
 
 ## Environment & Project Selection
 
@@ -233,7 +255,10 @@ given. An advance without `--comment` does not attribute any user text.
 
 ## JSON Output
 
-All commands support `--json`. Reads return the full resource object. Mutations return:
+All commands support `--json`. Reads return the server's full resource object,
+with every field it sends (issues include `ref`, `epic`, `milestone`, `use_case`
+and `url`). Scene and use case writes, links and resyncs return the server's
+response. Other mutations return:
 
 ```json
 {"ok": "true", "id": "<id>"}
@@ -254,7 +279,7 @@ principal, not a persona. No provider credentials or tokens are included.
 project; issues outside it return an error. Without `--project`, the default is
 `next` on prod and `flux` on test. Each `thread` comment preserves `author` and adds
 `author_id`, the Basecamp creator's string person ID. Missing creator IDs are
-omitted, never inferred from a name:
+omitted or `null` as the server sends them, never inferred from a name:
 
 ```json
 {"id":"789","author":"Alex","author_id":"456","date":"2026-10-06","content":"Comment text"}
@@ -270,6 +295,8 @@ to the signed-in principal; do not compare display names or persona labels.
 |-------|-----|
 | `unauthorized: run 'flux auth login'` | Run `flux auth login [--env test]` |
 | `not found` | Verify the ID exists for the current env/project |
+| `product_not_configured` | The project has no scenes or use cases; pick another `--project` |
+| `not supported by this server` | The server is older than the CLI; wait for the server release |
 | Non-zero exit | Check stderr for the error message |
 
 Exit codes: 0 = success, non-zero = error (check stderr).

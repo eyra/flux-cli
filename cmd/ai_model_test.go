@@ -81,7 +81,7 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 					requests := 0
 					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						requests++
-						if r.Method != operation.method || r.URL.Path != "/api/dev"+operation.path || r.Header.Get("Authorization") != "Bearer fixture-key" {
+						if r.Method != operation.method || r.URL.Path != "/api/delivery"+operation.path || r.Header.Get("Authorization") != "Bearer fixture-key" {
 							t.Errorf("unexpected request: %s %s, authorization %q", r.Method, r.URL, r.Header.Get("Authorization"))
 						}
 						var body map[string]interface{}
