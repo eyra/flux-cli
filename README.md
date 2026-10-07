@@ -29,7 +29,8 @@ flux issues list --json
 flux issues get 12345
 ```
 
-Use `--project flux` or `--project next` to scope the lookup. The default is
+Use `--project <key>` (for example `flux`, `next` or `feldspar`; `flux projects
+list` shows all) to scope the lookup. The default is
 `next` on production and `flux` on test. An issue outside the selected project
 returns an error.
 
@@ -94,6 +95,7 @@ flux scenes get SCN-Next-02 [--no-thread]
 flux scenes create --title "Donate data" --area Next [--code SCN-Next-04] [--status Refine] [--description ...]
 flux scenes update SCN-Next-02 [--title ...] [--code ...] [--status none] [--description ...]
 flux scenes comment SCN-Next-02 --content "..."
+flux scenes next-code --area Next     # print the next free code, e.g. SCN-Next-04
 flux scenes usecases SCN-Next-02      # use cases linked to the scene
 flux scenes resync SCN-Next-02        # refresh the linked use case titles
 
@@ -103,14 +105,23 @@ flux usecases get UC-NEXT-01 [--no-thread]
 flux usecases create --title "Upload data" --area NEXT [--scene SCN-Next-02]
 flux usecases update UC-NEXT-01 [--title ...] [--code ...] [--status ...] [--description ...]
 flux usecases comment UC-NEXT-01 --content "..."
+flux usecases next-code --area NEXT   # print the next free code, e.g. UC-NEXT-03
 flux usecases link UC-NEXT-01 --target-type scene --target-id SCN-Next-02
 flux usecases unlink UC-NEXT-01 --target-type scene --target-id SCN-Next-02
 flux usecases issues UC-NEXT-01       # issues linked to the use case
 flux usecases resync UC-NEXT-01       # refresh the linked issue titles
 
 # Issues
+flux issues create --title "..." --app web --usecase UC-NEXT-01 [--epic ...] [--milestone ...]
+flux issues update 12345 --usecase UC-NEXT-02   # moves it; --usecase "" removes the link
 flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
 ```
+
+`issues create` and `issues update` link the issue through `--epic`,
+`--milestone` and `--usecase` after writing it, with the same link endpoint as
+`issues link`. If a link fails after the issue was created, the command exits
+with "issue <id> was created, but could not link …"; link it with `issues link`
+rather than creating it again.
 
 On create, the title gets `--code`, else the code it already starts with, else
 the next free code in `--area`. `--status` is the name of a group in the list;

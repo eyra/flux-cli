@@ -45,7 +45,7 @@ CLI for managing issues, epics, milestones, scenes, use cases, and AppSignal inc
 
 1. **Use the Flux CLI only** — never invoke Flux MCP tools or restore an MCP connection. Always pass `--env prod --project <key> --json` for operational commands. Only omit `--json` when presenting results directly to a human in prose.
 2. **Production is the source of truth** — production contains the Flux, Next, and Feldspar backlogs. Use `--env test` only for explicitly requested verification against the test deployment, never to manage Flux's real backlog.
-3. **Select the project explicitly** — use `flux` for Flux Platform, `next` for Next Platform, and `feldspar` for Feldspar. Production also has `devops`, `scriptdev`, and `website`. Resolve the key from the request or project configuration; do not rely on CLI defaults or its outdated two-project help text. Discover available projects with `flux projects list --env prod --project <key> --json` using a known key.
+3. **Select the project explicitly** — use `flux` for Flux Platform, `next` for Next Platform, and `feldspar` for Feldspar. Production also has `devops`, `scriptdev`, and `website`. Resolve the key from the request or project configuration; do not rely on CLI defaults. Discover available projects with `flux projects list --env prod --project <key> --json` using a known key.
 4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login --env prod --project <key> --json` and retry. For explicit test verification, authenticate to `--env test` instead.
 5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `issues update --title`; `issues advance` does not accept `--title`.
 6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID. Scenes and use cases also take their code (`SCN-Next-02`, `UC-NEXT-01`).
@@ -64,8 +64,8 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | List people | `flux people list --env prod --project <key> --json` |
 | List issues | `flux issues list --env prod --project <key> --json [--stage testing]` |
 | Get issue | `flux issues get <id> --env prod --project <key> --json` |
-| Create issue | `flux issues create --title "..." [--stage specification] [--program dev] [--size M] --env prod --project <key> --json` |
-| Update issue | `flux issues update <id> --title "..." --env prod --project <key> --json` |
+| Create issue | `flux issues create --title "..." --app web [--stage specification] [--size M] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
+| Update issue | `flux issues update <id> [--title "..."] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
 | Advance issue | `flux issues advance <id> --stage testing --comment "..." --env prod --project <key> --json` |
 | Assign issue | `flux issues assign <id> --assignees <person_id,...> --env prod --project <key> --json` |
 | Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --env prod --project <key> --json` |
@@ -86,6 +86,7 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Get scene | `flux scenes get <id-or-code> [--no-thread] --env prod --project next --json` |
 | Create scene | `flux scenes create --title "..." --area Next [--status ...] --env prod --project next --json` |
 | Update scene | `flux scenes update <id-or-code> [--title ...] [--code ...] [--status ...] --env prod --project next --json` |
+| Next free scene code | `flux scenes next-code --area Next --env prod --project next --json` |
 | Comment on scene | `flux scenes comment <id-or-code> --content "..." --env prod --project next --json` |
 | Use cases of a scene | `flux scenes usecases <id-or-code> --env prod --project next --json` |
 | Resync scene linked use cases | `flux scenes resync <id-or-code> --env prod --project next --json` |
@@ -93,6 +94,7 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Get use case | `flux usecases get <id-or-code> [--no-thread] --env prod --project next --json` |
 | Create use case | `flux usecases create --title "..." --area NEXT [--scene <id-or-code>] --env prod --project next --json` |
 | Update use case | `flux usecases update <id-or-code> [--title ...] [--code ...] [--status ...] --env prod --project next --json` |
+| Next free use case code | `flux usecases next-code --area NEXT --env prod --project next --json` |
 | Comment on use case | `flux usecases comment <id-or-code> --content "..." --env prod --project next --json` |
 | Link use case to scene | `flux usecases link <id-or-code> --target-type scene --target-id <scene> --env prod --project next --json` |
 | Unlink use case | `flux usecases unlink <id-or-code> --target-type scene --target-id <scene> --env prod --project next --json` |
@@ -128,10 +130,11 @@ Projects with a Product to-do set plan product work as **Scene → Use Case → 
 - **Use Case**: part of a Scene worked out as a complete software design (main success scenario, alternative flows, exceptions). Each can ship to production on its own. Written by the software designer.
 - **Issue**: delivery work that implements (part of) a Use Case.
 
-**Codes** start the title: `SCN-<Area>-NN` for scenes (legacy `UJ-<Area>-NN` is still accepted) and `UC-<AREA>-NN` for use cases. Matching ignores case and leading zeros; `xx` marks an unnumbered draft. Don't pick numbers yourself: `create --area <Area>` gives the title the next free code, `--code` sets one explicitly, and a title that already starts with a code keeps it.
+**Codes** start the title: `SCN-<Area>-NN` for scenes (legacy `UJ-<Area>-NN` is still accepted) and `UC-<AREA>-NN` for use cases. Matching ignores case and leading zeros; `xx` marks an unnumbered draft. Don't pick numbers yourself: `create --area <Area>` gives the title the next free code, `--code` sets one explicitly, and a title that already starts with a code keeps it. `next-code --area <Area>` prints the next free code without creating anything.
 
 **Rules:**
 - Each child has at most one parent: a use case belongs to one scene, an issue to one use case. Linking to another parent moves the child.
+- `issues create` and `issues update` link through `--epic`, `--milestone` and `--usecase`; on update an empty value (`--usecase ""`) removes that link. If the issue is created but a link fails, the command fails with "issue <id> was created, but could not link …": link it with `flux issues link` instead of creating it again.
 - A use case is optional on an issue. Link product work to its use case when one exists; bugs, chores and triage findings may have none. Epics and milestones still work as before, next to the use case.
 - Scenes and use cases are completed by hand in Basecamp; there is no complete command.
 - `--status` is the name of a to-do list group (for example `Refine`, `Ready to pick up`); `update --status none` moves the item out of its group. Status is reported as the group name, `done` once completed, or `null`.
@@ -161,15 +164,16 @@ flux issues update <id> --title "[Dev] Fix the thing 💻" --env prod --project 
 ### Create and link an issue to an epic
 
 ```bash
-# Create issue in Development stage
+# Create issue in Development stage, linked to the epic
 flux issues create \
   --title "[Dev] Implement feature X 💻" \
+  --app web \
   --stage development \
-  --program dev \
   --size M \
+  --epic <epic_id> \
   --env prod --project <key> --json
 
-# Link to epic (use ID from create response)
+# Or link an existing issue
 flux issues link <issue_id> --target-type epic --target-id <epic_id> --env prod --project <key> --json
 ```
 
@@ -180,8 +184,10 @@ flux issues link <issue_id> --target-type epic --target-id <epic_id> --env prod 
 flux usecases get UC-NEXT-01 --env prod --project next --json
 flux usecases issues UC-NEXT-01 --env prod --project next --json
 
-# Create an issue and link it to the use case (use ID from create response)
-flux issues create --title "[Web] Confirm account link during sign-in" --stage specification --env prod --project next --json
+# Create an issue linked to the use case
+flux issues create --title "[Web] Confirm account link during sign-in" --app web --stage specification --usecase UC-NEXT-01 --env prod --project next --json
+
+# Or link an existing issue
 flux issues link <issue_id> --target-type usecase --target-id UC-NEXT-01 --env prod --project next --json
 ```
 

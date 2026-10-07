@@ -111,6 +111,11 @@ type UseCaseIssues struct {
 	Issues  []Issue    `json:"issues"`
 }
 
+// ProductCode is a suggested code for a new scene or use case.
+type ProductCode struct {
+	Code string `json:"code"`
+}
+
 // ResyncSummary is the response to refreshing a parent's linked titles.
 type ResyncSummary struct {
 	ParentType  string           `json:"parent_type"`
@@ -279,6 +284,16 @@ func (c *Client) ListSceneUseCases(id, project string) (*Response[SceneUseCases]
 func (c *Client) ListUseCaseIssues(id, project string) (*Response[UseCaseIssues], error) {
 	var result Response[UseCaseIssues]
 	if err := c.productCall(http.MethodGet, productEndpoint(KindUseCase, id, "issues", project, nil), nil, "list use case issues", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// NextProductCode returns the next free code in area.
+func (c *Client) NextProductCode(kind ProductKind, area, project string) (*Response[ProductCode], error) {
+	var result Response[ProductCode]
+	query := url.Values{"area": {area}}
+	if err := c.productCall(http.MethodGet, productEndpoint(kind, "next_code", "", project, query), nil, "get next "+kind.label()+" code", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
