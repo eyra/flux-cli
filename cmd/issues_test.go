@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 // fixtureRequest is one request a command should send, and the answer.
@@ -66,6 +68,27 @@ func TestIssueWriteLinks(t *testing.T) {
 			json: map[string]interface{}{"id": "3001"},
 			text: []string{"Created issue 3001: Issue"},
 			err:  "issue 3001 was created, but could not link use case UC-NEXT-01: product_not_configured",
+		},
+		{
+			name:     "create with a context",
+			argv:     []string{"issues", "create", "--title", "Issue", "--app", "web", "--context", "UC-NEXT-01"},
+			requests: []fixtureRequest{{"POST", "/api/delivery/issues", map[string]interface{}{"title": "Issue", "app": "web", "context": "UC-NEXT-01", "project": "fixture-project"}, 201, created}},
+			json:     map[string]interface{}{"id": "3001"},
+			text:     []string{"Created issue 3001: Issue"},
+		},
+		{
+			name:     "create with the deprecated program flag",
+			argv:     []string{"issues", "create", "--title", "Issue", "--app", "web", "--program", "dev"},
+			requests: []fixtureRequest{{"POST", "/api/delivery/issues", map[string]interface{}{"title": "Issue", "app": "web", "context": "dev", "project": "fixture-project"}, 201, created}},
+			json:     map[string]interface{}{"id": "3001"},
+			text:     []string{"Created issue 3001: Issue"},
+		},
+		{
+			name:     "update the context",
+			argv:     []string{"issues", "update", "3001", "--context", "Web"},
+			requests: []fixtureRequest{{"PATCH", "/api/delivery/issues/3001", map[string]interface{}{"context": "Web", "project": "fixture-project"}, 200, updated}},
+			json:     map[string]interface{}{"id": "3001"},
+			text:     []string{"Updated issue 3001: Issue"},
 		},
 		{
 			name: "create with an empty epic",
@@ -170,4 +193,52 @@ func TestIssueWriteLinks(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestIssueContext(t *testing.T) {
+	for _, tc := range []struct {
+		name, response, want string
+	}{
+		{"context", `{"id":"1","title":"Issue","stage":"Development","context":"UC-NEXT-01","program":"UC-NEXT-01"}`, "Context: UC-NEXT-01\n"},
+		{"older server", `{"id":"1","title":"Issue","stage":"Development","program":"Dev"}`, "Context: Dev\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			output, err := runCommand(t, []string{"issues", "get", "1"}, false, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				io.WriteString(w, tc.response)
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(output, tc.want) {
+				t.Errorf("output lacks %q:\n%s", tc.want, output)
+			}
+		})
+	}
+
+	t.Run("list filter", func(t *testing.T) {
+		var query string
+		_, err := runCommand(t, []string{"issues", "list", "--context", "UC-NEXT-01"}, true, func(w http.ResponseWriter, r *http.Request) {
+			query = r.URL.RawQuery
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, `{"issues":[]}`)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"context=UC-NEXT-01", "program=UC-NEXT-01"} {
+			if !strings.Contains(query, want) {
+				t.Errorf("query %q lacks %q", query, want)
+			}
+		}
+	})
+
+	t.Run("program is a hidden alias", func(t *testing.T) {
+		for _, command := range []*cobra.Command{issuesListCmd, issuesCreateCmd, issuesUpdateCmd} {
+			flag := command.Flags().Lookup("program")
+			if flag == nil || !flag.Hidden || flag.Deprecated == "" {
+				t.Errorf("%s: --program should be a hidden, deprecated flag", command.Name())
+			}
+		}
+	})
 }

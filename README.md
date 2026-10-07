@@ -112,7 +112,9 @@ flux usecases issues UC-NEXT-01       # issues linked to the use case
 flux usecases resync UC-NEXT-01       # refresh the linked issue titles
 
 # Issues
-flux issues create --title "..." --app web --usecase UC-NEXT-01 [--epic ...] [--milestone ...]
+flux issues create --title "..." --app web --usecase UC-NEXT-01 [--epic ...] [--milestone ...] [--context Dev]
+flux issues update 12345 --context UC-NEXT-02   # sets the title's [UC-NEXT-02] prefix
+flux issues list --context dev                  # issues with that title prefix
 flux issues update 12345 --usecase UC-NEXT-02   # moves it; --usecase "" removes the link
 flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
 ```
@@ -122,6 +124,13 @@ flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
 `issues link`. If a link fails after the issue was created, the command exits
 with "issue <id> was created, but could not link …"; link it with `issues link`
 rather than creating it again.
+
+An issue's **context** is the bracketed prefix of its title: `Dev` in
+`[Dev] Fix login`, `UC-NEXT-01` in `[UC-NEXT-01] Show the results`. It used to
+be called the program. `--context` on `issues create` and `issues update` sets
+that prefix, replacing any existing one, `issues list --context` filters on it,
+and `issues get` prints it as `Context:`. `--program` still works as a hidden,
+deprecated alias of `--context`.
 
 On create, the title gets `--code`, else the code it already starts with, else
 the next free code in `--area`. `--status` is the name of a group in the list;

@@ -62,10 +62,10 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Auth status | `flux auth status --env prod --project <key> --json` |
 | List projects | `flux projects list --env prod --project <key> --json` |
 | List people | `flux people list --env prod --project <key> --json` |
-| List issues | `flux issues list --env prod --project <key> --json [--stage testing]` |
+| List issues | `flux issues list --env prod --project <key> --json [--stage testing] [--context dev]` |
 | Get issue | `flux issues get <id> --env prod --project <key> --json` |
-| Create issue | `flux issues create --title "..." --app web [--stage specification] [--size M] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
-| Update issue | `flux issues update <id> [--title "..."] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
+| Create issue | `flux issues create --title "..." --app web [--stage specification] [--size M] [--context Dev] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
+| Update issue | `flux issues update <id> [--title "..."] [--context Dev] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
 | Advance issue | `flux issues advance <id> --stage testing --comment "..." --env prod --project <key> --json` |
 | Assign issue | `flux issues assign <id> --assignees <person_id,...> --env prod --project <key> --json` |
 | Link issue to epic | `flux issues link <id> --target-type epic --target-id <epic_id> --env prod --project <key> --json` |
@@ -135,6 +135,7 @@ Projects with a Product to-do set plan product work as **Scene → Use Case → 
 **Rules:**
 - Each child has at most one parent: a use case belongs to one scene, an issue to one use case. Linking to another parent moves the child.
 - `issues create` and `issues update` link through `--epic`, `--milestone` and `--usecase`; on update an empty value (`--usecase ""`) removes that link. If the issue is created but a link fails, the command fails with "issue <id> was created, but could not link …": link it with `flux issues link` instead of creating it again.
+- An issue's **context** is its bracketed title prefix (`[Dev]`, `[Web]`, or something else such as `[UC-NEXT-01]`), formerly called the program. `--context` on `issues create`/`update` sets it, replacing any existing prefix; `issues list --context` filters on it. `--program` is a deprecated alias; don't use it.
 - A use case is optional on an issue. Link product work to its use case when one exists; bugs, chores and triage findings may have none. Epics and milestones still work as before, next to the use case.
 - Scenes and use cases are completed by hand in Basecamp; there is no complete command.
 - `--status` is the name of a to-do list group (for example `Refine`, `Ready to pick up`); `update --status none` moves the item out of its group. Status is reported as the group name, `done` once completed, or `null`.

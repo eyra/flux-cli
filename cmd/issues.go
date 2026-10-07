@@ -15,7 +15,7 @@ var (
 	// Create flags
 	issueTitleFlag       string
 	issueDescriptionFlag string
-	issueProgramFlag     string
+	issueContextFlag     string
 	issueSizeFlag        string
 	issuePriorityFlag    int
 	issueAppFlag         string
@@ -50,6 +50,7 @@ var issuesListCmd = &cobra.Command{
 
 		issues, err := client.ListIssues(api.ListIssuesOptions{
 			Stage:     stageFlag,
+			Context:   issueContextFlag,
 			App:       issueAppFlag,
 			Completed: issueCompletedFlag,
 			Project:   getProject(),
@@ -122,8 +123,8 @@ var issuesGetCmd = &cobra.Command{
 			fmt.Printf("Completed: yes\n")
 		}
 
-		if issue.Program != "" {
-			fmt.Printf("Program: %s\n", issue.Program)
+		if context := issue.DisplayContext(); context != "" {
+			fmt.Printf("Context: %s\n", context)
 		}
 		if issue.Size != "" {
 			fmt.Printf("Size: %s\n", issue.Size)
@@ -181,7 +182,7 @@ var issuesCreateCmd = &cobra.Command{
 			Title:       issueTitleFlag,
 			Description: issueDescriptionFlag,
 			Stage:       stageFlag,
-			Program:     issueProgramFlag,
+			Context:     issueContextFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
@@ -213,6 +214,7 @@ var issuesUpdateCmd = &cobra.Command{
 
 		req := api.UpdateIssueRequest{
 			Title:       issueTitleFlag,
+			Context:     issueContextFlag,
 			Description: issueDescriptionFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
@@ -535,12 +537,13 @@ func init() {
 	issuesListCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Filter by stage (specification, design, development, testing)")
 	issuesListCmd.Flags().BoolVar(&issueCompletedFlag, "completed", false, "List only completed issues")
 	issuesListCmd.Flags().StringVar(&issueAppFlag, "app", "", "Filter by app (web, ios, android)")
+	addContextFlags(issuesListCmd, "Filter by context, the bracketed title prefix (e.g. dev, UC-NEXT-01)")
 
 	// Create flags
 	issuesCreateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "Issue title (required)")
 	issuesCreateCmd.Flags().StringVar(&issueDescriptionFlag, "description", "", "Issue description")
 	issuesCreateCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Target stage (specification, design, development, testing)")
-	issuesCreateCmd.Flags().StringVar(&issueProgramFlag, "program", "", "Program (basecamp, github, make, mcp, dev, devops)")
+	addContextFlags(issuesCreateCmd, "Context, set as the bracketed title prefix (e.g. Dev, UC-NEXT-01)")
 	issuesCreateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesCreateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
 	issuesCreateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
@@ -552,6 +555,7 @@ func init() {
 
 	// Update flags
 	issuesUpdateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "New title")
+	addContextFlags(issuesUpdateCmd, "Context, replaces the bracketed title prefix (e.g. Dev, UC-NEXT-01)")
 	issuesUpdateCmd.Flags().StringVar(&issueDescriptionFlag, "description", "", "New description")
 	issuesUpdateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesUpdateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
@@ -583,4 +587,12 @@ func init() {
 	issuesAssignCmd.Flags().StringVar(&issueAssigneeIDsFlag, "assignees", "", "Comma-separated person IDs (required)")
 
 	issuesCmd.AddCommand(issuesAssignCmd)
+}
+
+// addContextFlags adds --context, and --program as its hidden, deprecated
+// alias: "program" was the old name of an issue's context.
+func addContextFlags(cmd *cobra.Command, usage string) {
+	cmd.Flags().StringVar(&issueContextFlag, "context", "", usage)
+	cmd.Flags().StringVar(&issueContextFlag, "program", "", usage)
+	cmd.Flags().MarkDeprecated("program", "use --context instead")
 }
