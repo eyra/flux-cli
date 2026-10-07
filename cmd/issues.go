@@ -21,6 +21,7 @@ var (
 	issueAppFlag         string
 	issueEpicFlag        string
 	issueMilestoneFlag   string
+	issueUseCaseFlag     string
 	issuePersonaFlag     string
 	// Advance flags
 	issueTargetStageFlag    string
@@ -184,8 +185,6 @@ var issuesCreateCmd = &cobra.Command{
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Epic:        issueEpicFlag,
-			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
@@ -196,13 +195,11 @@ var issuesCreateCmd = &cobra.Command{
 			return err
 		}
 
-		if jsonFlag {
-			data, _ := json.MarshalIndent(issue, "", "  ")
-			fmt.Println(string(data))
-			return nil
+		links, linkErr := linkIssueParents(cmd, client, issue.ID, false)
+		printIssueWrite("Created", issue, links)
+		if linkErr != nil {
+			return fmt.Errorf("issue %s was created, but %w", issue.ID, linkErr)
 		}
-
-		fmt.Printf("Created issue %s: %s\n", issue.ID, issue.Title)
 		return nil
 	},
 }
@@ -220,8 +217,6 @@ var issuesUpdateCmd = &cobra.Command{
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Epic:        issueEpicFlag,
-			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
@@ -232,13 +227,11 @@ var issuesUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		if jsonFlag {
-			data, _ := json.MarshalIndent(issue, "", "  ")
-			fmt.Println(string(data))
-			return nil
+		links, linkErr := linkIssueParents(cmd, client, args[0], true)
+		printIssueWrite("Updated", issue, links)
+		if linkErr != nil {
+			return fmt.Errorf("issue %s was updated, but %w", args[0], linkErr)
 		}
-
-		fmt.Printf("Updated issue %s: %s\n", issue.ID, issue.Title)
 		return nil
 	},
 }
@@ -403,6 +396,130 @@ var issuesAssignCmd = &cobra.Command{
 	},
 }
 
+// issueParents are the parents that issues create and update link to through
+// a flag. The server ignores them in the issue body, so the CLI links each one
+// through the issue's link endpoint after the write.
+var issueParents = []struct{ flag, targetType, label string }{
+	{"epic", "epic", "epic"},
+	{"milestone", "milestone", "milestone"},
+	{"usecase", "use_case", "use case"},
+}
+
+// issueLink is a link that issues create or update made or removed.
+type issueLink struct {
+	targetType string
+	label      string
+	id         string
+	unlinked   bool
+}
+
+// linkIssueParents links issue id to the parents given by flags. With
+// allowUnlink, an empty flag value removes the issue's current link of that
+// type. It returns the links it made before any error.
+func linkIssueParents(cmd *cobra.Command, client *api.Client, id string, allowUnlink bool) ([]issueLink, error) {
+	var links []issueLink
+	var current *api.Issue
+	for _, parent := range issueParents {
+		if !cmd.Flags().Changed(parent.flag) {
+			continue
+		}
+		target, _ := cmd.Flags().GetString(parent.flag)
+		action := "link"
+		if target == "" {
+			if !allowUnlink {
+				continue
+			}
+			if current == nil {
+				issue, err := client.GetIssue(id, getProject())
+				if err != nil {
+					return links, fmt.Errorf("could not read its links: %w", err)
+				}
+				current = issue
+			}
+			if target = currentParent(current, parent.targetType); target == "" {
+				continue
+			}
+			action = "unlink"
+		}
+
+		response, err := client.LinkIssue(id, api.LinkRequest{
+			TargetType: parent.targetType,
+			TargetID:   target,
+			Action:     action,
+			Project:    getProject(),
+		})
+		if err != nil {
+			return links, fmt.Errorf("could not %s %s %s: %w", action, parent.label, target, err)
+		}
+		links = append(links, issueLink{
+			targetType: parent.targetType,
+			label:      parent.label,
+			id:         linkedParentID(response, parent.targetType, target),
+			unlinked:   action == "unlink",
+		})
+	}
+	return links, nil
+}
+
+func currentParent(issue *api.Issue, targetType string) string {
+	switch targetType {
+	case "epic":
+		return string(issue.Epic)
+	case "milestone":
+		return string(issue.Milestone)
+	default:
+		return string(issue.UseCase)
+	}
+}
+
+// linkedParentID returns the parent ID from a link response (a use case code
+// resolves to its ID there), or fallback.
+func linkedParentID(response json.RawMessage, targetType, fallback string) string {
+	var fields map[string]interface{}
+	json.Unmarshal(response, &fields) //nolint:errcheck
+	switch id := fields[targetType+"_id"].(type) {
+	case string:
+		if id != "" {
+			return id
+		}
+	case float64:
+		return fmt.Sprintf("%.0f", id)
+	}
+	return fallback
+}
+
+// printIssueWrite prints a created or updated issue with the links made.
+// JSON output is the server's issue with the link fields set.
+func printIssueWrite(verb string, issue *api.Issue, links []issueLink) {
+	if jsonFlag {
+		data, _ := json.Marshal(issue)
+		var fields map[string]interface{}
+		decoder := json.NewDecoder(strings.NewReader(string(data)))
+		decoder.UseNumber()
+		if err := decoder.Decode(&fields); err != nil || fields == nil {
+			fields = map[string]interface{}{}
+		}
+		for _, link := range links {
+			if link.unlinked {
+				fields[link.targetType] = nil
+			} else {
+				fields[link.targetType] = link.id
+			}
+		}
+		printJSON(fields)
+		return
+	}
+
+	fmt.Printf("%s issue %s: %s\n", verb, issue.ID, issue.Title)
+	for _, link := range links {
+		if link.unlinked {
+			fmt.Printf("Unlinked from %s %s\n", link.label, link.id)
+		} else {
+			fmt.Printf("Linked to %s %s\n", link.label, link.id)
+		}
+	}
+}
+
 func init() {
 	rootCmd.AddCommand(issuesCmd)
 	issuesCmd.AddCommand(issuesListCmd)
@@ -429,6 +546,7 @@ func init() {
 	issuesCreateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesCreateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to")
+	issuesCreateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to, e.g. UC-NEXT-01")
 	issuesCreateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
 	issuesCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
@@ -440,6 +558,7 @@ func init() {
 	issuesUpdateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesUpdateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to (empty to remove)")
+	issuesUpdateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
 	issuesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 

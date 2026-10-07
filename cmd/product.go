@@ -230,6 +230,31 @@ description replaces only the user part, not the links. --status moves the
 	return cmd
 }
 
+func (p *productCommand) nextCodeCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "next-code",
+		Short: fmt.Sprintf("Print the next free %s code in an area", p.label),
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if p.flags.area == "" {
+				return fmt.Errorf("--area is required")
+			}
+			result, err := p.client().NextProductCode(p.kind, p.flags.area, getProject())
+			if err != nil {
+				return err
+			}
+			if jsonFlag {
+				printJSON(result)
+				return nil
+			}
+			fmt.Println(result.Value.Code)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&p.flags.area, "area", "", "Area, e.g. Next (required)")
+	return cmd
+}
+
 func (p *productCommand) commentCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "comment [id-or-code]",
@@ -442,7 +467,7 @@ func init() {
 		product *productCommand
 	}{{scenesCmd, scenes}, {usecasesCmd, usecases}} {
 		p := group.product
-		group.parent.AddCommand(p.listCmd(), p.getCmd(), p.createCmd(), p.updateCmd(), p.commentCmd(), p.resyncCmd())
+		group.parent.AddCommand(p.listCmd(), p.getCmd(), p.createCmd(), p.updateCmd(), p.commentCmd(), p.resyncCmd(), p.nextCodeCmd())
 	}
 
 	scenesCmd.AddCommand(scenesUseCasesCmd)

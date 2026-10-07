@@ -18,7 +18,9 @@ type ProjectsResponse struct {
 	Projects []Project `json:"projects"`
 }
 
-// CreateIssueRequest is the request body for creating an issue
+// CreateIssueRequest is the request body for creating an issue. Links to an
+// epic, milestone or use case go through LinkIssue afterwards: the server
+// ignores them here.
 type CreateIssueRequest struct {
 	Title       string  `json:"title"`
 	Description string  `json:"description,omitempty"`
@@ -27,22 +29,19 @@ type CreateIssueRequest struct {
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Epic        string  `json:"epic,omitempty"`
-	Milestone   string  `json:"milestone,omitempty"`
 	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
 }
 
-// UpdateIssueRequest is the request body for updating an issue
+// UpdateIssueRequest is the request body for updating an issue. Links go
+// through LinkIssue, as for CreateIssueRequest.
 type UpdateIssueRequest struct {
 	Title       string  `json:"title,omitempty"`
 	Description string  `json:"description,omitempty"`
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Epic        string  `json:"epic,omitempty"`
-	Milestone   string  `json:"milestone,omitempty"`
 	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
