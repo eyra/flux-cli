@@ -20,39 +20,42 @@ type ProjectsResponse struct {
 
 // CreateIssueRequest is the request body for creating an issue
 type CreateIssueRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
-	Stage       string `json:"stage,omitempty"`
-	Program     string `json:"program,omitempty"`
-	Size        string `json:"size,omitempty"`
-	Priority    int    `json:"priority,omitempty"`
-	App         string `json:"app,omitempty"`
-	Epic        string `json:"epic,omitempty"`
-	Milestone   string `json:"milestone,omitempty"`
-	Persona     string `json:"persona,omitempty"`
-	Project     string `json:"project,omitempty"`
+	Title       string  `json:"title"`
+	Description string  `json:"description,omitempty"`
+	Stage       string  `json:"stage,omitempty"`
+	Program     string  `json:"program,omitempty"`
+	Size        string  `json:"size,omitempty"`
+	Priority    int     `json:"priority,omitempty"`
+	App         string  `json:"app,omitempty"`
+	Epic        string  `json:"epic,omitempty"`
+	Milestone   string  `json:"milestone,omitempty"`
+	Persona     string  `json:"persona,omitempty"`
+	Project     string  `json:"project,omitempty"`
+	AIModel     *string `json:"ai_model,omitempty"`
 }
 
 // UpdateIssueRequest is the request body for updating an issue
 type UpdateIssueRequest struct {
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Size        string `json:"size,omitempty"`
-	Priority    int    `json:"priority,omitempty"`
-	App         string `json:"app,omitempty"`
-	Epic        string `json:"epic,omitempty"`
-	Milestone   string `json:"milestone,omitempty"`
-	Persona     string `json:"persona,omitempty"`
-	Project     string `json:"project,omitempty"`
+	Title       string  `json:"title,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Size        string  `json:"size,omitempty"`
+	Priority    int     `json:"priority,omitempty"`
+	App         string  `json:"app,omitempty"`
+	Epic        string  `json:"epic,omitempty"`
+	Milestone   string  `json:"milestone,omitempty"`
+	Persona     string  `json:"persona,omitempty"`
+	Project     string  `json:"project,omitempty"`
+	AIModel     *string `json:"ai_model,omitempty"`
 }
 
 // AdvanceIssueRequest is the request body for advancing an issue stage
 type AdvanceIssueRequest struct {
-	TargetStage    string `json:"target_stage,omitempty"`
-	TargetSubstage string `json:"target_substage,omitempty"`
-	Comment        string `json:"comment,omitempty"`
-	Persona        string `json:"persona,omitempty"`
-	Project        string `json:"project,omitempty"`
+	TargetStage    string  `json:"target_stage,omitempty"`
+	TargetSubstage string  `json:"target_substage,omitempty"`
+	Comment        string  `json:"comment,omitempty"`
+	Persona        string  `json:"persona,omitempty"`
+	Project        string  `json:"project,omitempty"`
+	AIModel        *string `json:"ai_model,omitempty"`
 }
 
 // LinkRequest is the request body for linking/unlinking items
@@ -63,11 +66,12 @@ type LinkRequest struct {
 	Project    string `json:"project,omitempty"`
 }
 
-// CommentRequest is the request body for adding a comment
+// CommentRequest is the request body for adding or updating a comment
 type CommentRequest struct {
-	Content string `json:"content"`
-	Persona string `json:"persona,omitempty"`
-	Project string `json:"project,omitempty"`
+	Content string  `json:"content"`
+	Persona string  `json:"persona,omitempty"`
+	Project string  `json:"project,omitempty"`
+	AIModel *string `json:"ai_model,omitempty"`
 }
 
 // CommentResponse is returned when a comment is created
@@ -104,20 +108,22 @@ type EpicsResponse struct {
 
 // CreateEpicRequest is the request body for creating an epic
 type CreateEpicRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
-	Milestone   string `json:"milestone,omitempty"`
-	Assignees   string `json:"assignee_ids,omitempty"` // comma-separated IDs
-	Project     string `json:"project,omitempty"`
+	Title       string  `json:"title"`
+	Description string  `json:"description,omitempty"`
+	Milestone   string  `json:"milestone,omitempty"`
+	Assignees   string  `json:"assignee_ids,omitempty"` // comma-separated IDs
+	Project     string  `json:"project,omitempty"`
+	AIModel     *string `json:"ai_model,omitempty"`
 }
 
 // UpdateEpicRequest is the request body for updating an epic
 type UpdateEpicRequest struct {
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Milestone   string `json:"milestone,omitempty"`
-	Branch      string `json:"branch,omitempty"`
-	Project     string `json:"project,omitempty"`
+	Title       string  `json:"title,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Milestone   string  `json:"milestone,omitempty"`
+	Branch      string  `json:"branch,omitempty"`
+	Project     string  `json:"project,omitempty"`
+	AIModel     *string `json:"ai_model,omitempty"`
 }
 
 // LinkEpicRequest is the request body for linking an epic to a milestone
@@ -151,27 +157,29 @@ type MilestonesResponse struct {
 
 // CreateMilestoneRequest is the request body for creating a milestone
 type CreateMilestoneRequest struct {
-	Title           string `json:"title"`
-	Description     string `json:"description,omitempty"`
-	App             string `json:"app,omitempty"`
-	Repo            string `json:"repo,omitempty"`
-	Branch          string `json:"branch,omitempty"`
-	Workflow        string `json:"workflow,omitempty"`
-	GithubMilestone int    `json:"github_milestone,omitempty"`
-	Assignees       string `json:"assignee_ids,omitempty"` // comma-separated IDs
-	Project         string `json:"project,omitempty"`
+	Title           string  `json:"title"`
+	Description     string  `json:"description,omitempty"`
+	App             string  `json:"app,omitempty"`
+	Repo            string  `json:"repo,omitempty"`
+	Branch          string  `json:"branch,omitempty"`
+	Workflow        string  `json:"workflow,omitempty"`
+	GithubMilestone int     `json:"github_milestone,omitempty"`
+	Assignees       string  `json:"assignee_ids,omitempty"` // comma-separated IDs
+	Project         string  `json:"project,omitempty"`
+	AIModel         *string `json:"ai_model,omitempty"`
 }
 
 // UpdateMilestoneRequest is the request body for updating a milestone
 type UpdateMilestoneRequest struct {
-	Title           string `json:"title,omitempty"`
-	Description     string `json:"description,omitempty"`
-	App             string `json:"app,omitempty"`
-	Repo            string `json:"repo,omitempty"`
-	Branch          string `json:"branch,omitempty"`
-	Workflow        string `json:"workflow,omitempty"`
-	GithubMilestone int    `json:"github_milestone,omitempty"`
-	Project         string `json:"project,omitempty"`
+	Title           string  `json:"title,omitempty"`
+	Description     string  `json:"description,omitempty"`
+	App             string  `json:"app,omitempty"`
+	Repo            string  `json:"repo,omitempty"`
+	Branch          string  `json:"branch,omitempty"`
+	Workflow        string  `json:"workflow,omitempty"`
+	GithubMilestone int     `json:"github_milestone,omitempty"`
+	Project         string  `json:"project,omitempty"`
+	AIModel         *string `json:"ai_model,omitempty"`
 }
 
 // Incident represents an AppSignal incident

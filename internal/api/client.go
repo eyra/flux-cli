@@ -974,16 +974,8 @@ type CommentResult struct {
 	ID string `json:"id"`
 }
 
-func (c *Client) UpdateComment(id, content, project, persona string) (*CommentResult, error) {
-	body := map[string]string{"content": content}
-	if project != "" {
-		body["project"] = project
-	}
-	if persona != "" {
-		body["persona"] = persona
-	}
-
-	resp, err := c.patch(fmt.Sprintf("/api/dev/comments/%s", url.PathEscape(id)), body)
+func (c *Client) UpdateComment(id string, req CommentRequest) (*CommentResult, error) {
+	resp, err := c.patch(fmt.Sprintf("/api/dev/comments/%s", url.PathEscape(id)), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update comment: %w", err)
 	}

@@ -173,6 +173,7 @@ var issuesCreateCmd = &cobra.Command{
 			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
+			AIModel:     getAIModel(cmd),
 		}
 
 		issue, err := client.CreateIssue(req)
@@ -208,6 +209,7 @@ var issuesUpdateCmd = &cobra.Command{
 			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
+			AIModel:     getAIModel(cmd),
 		}
 
 		issue, err := client.UpdateIssue(args[0], req)
@@ -261,6 +263,7 @@ var issuesCommentCmd = &cobra.Command{
 			Content: issueCommentContentFlag,
 			Persona: issuePersonaFlag,
 			Project: getProject(),
+			AIModel: getAIModel(cmd),
 		}
 
 		comment, err := client.AddIssueComment(args[0], req)
@@ -291,6 +294,7 @@ var issuesAdvanceCmd = &cobra.Command{
 			Comment:        issueAdvanceCommentFlag,
 			Persona:        issuePersonaFlag,
 			Project:        getProject(),
+			AIModel:        getAIModel(cmd),
 		}
 
 		result, err := client.AdvanceIssue(args[0], req)
@@ -410,6 +414,7 @@ func init() {
 	issuesCreateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	issuesCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
 	// Update flags
 	issuesUpdateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "New title")
@@ -420,16 +425,19 @@ func init() {
 	issuesUpdateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	issuesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 
 	// Comment flags
 	issuesCommentCmd.Flags().StringVar(&issueCommentContentFlag, "content", "", "Comment content (required)")
 	issuesCommentCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	issuesCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 
 	// Advance flags
 	issuesAdvanceCmd.Flags().StringVar(&issueTargetStageFlag, "stage", "", "Target stage (specification, design, development, testing)")
 	issuesAdvanceCmd.Flags().StringVar(&issueTargetSubstageFlag, "substage", "", "Target sub-stage")
 	issuesAdvanceCmd.Flags().StringVar(&issueAdvanceCommentFlag, "comment", "", "Comment explaining the transition")
 	issuesAdvanceCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	issuesAdvanceCmd.Flags().String("ai-model", "", "Caller-declared model for the optional comment footer")
 
 	// Link flags
 	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic or milestone (required)")

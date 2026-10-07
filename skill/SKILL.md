@@ -192,6 +192,45 @@ The server processes all comment content through the same pipeline as the MCP to
 
 **Recommended:** write plain text with Markdown syntax and let the server handle the conversion.
 
+## AI Model Attribution
+
+Pass `--ai-model "<model>"` only when declaring the model that generated the
+description or comment you are supplying. It is optional, caller-declared display
+metadata, not verified identity. Never infer it from persona attribution,
+credentials, or environment. It does not invoke/select a model or change
+authentication, environment, or project selection.
+
+Supported content writes:
+
+- `flux issues create` / `update` with `--description`
+- `flux epics create` / `update` with `--description`
+- `flux milestones create` / `update` with `--description`
+- `flux issues comment`, `flux epics comment`, `flux milestones comment`
+- `flux comments update`
+- `flux issues advance` for its optional `--comment` only, not its automatic stage comment
+
+```bash
+flux issues comment <id> --content "Investigated the failure." --persona sam --ai-model "openai/gpt-5" --json
+flux comments update <comment_id> --content "Revised findings." --ai-model "anthropic/claude-sonnet-4" --json
+```
+
+The flag is local to these commands, not available on reads, deletes, links,
+assignments, resyncs, or other operations. The exact string is forwarded as JSON
+`ai_model`; provider/model IDs and HTML-looking strings are not interpreted by
+the CLI. Omission leaves the JSON field absent.
+
+The server adds one code-block footer, with only Flux and the model name bold and no italics:
+
+- Absent, empty, or whitespace-only model: `<pre>Assisted by <strong>Flux</strong></pre>`
+- Model `openai/gpt-5`: `<pre>Assisted by <strong>Flux</strong> · Generated with <strong>openai/gpt-5</strong></pre>`
+
+Model text is HTML-escaped by the server and never expanded into `@mentions`.
+When editing content, the existing generated footer is replaced, not duplicated;
+omitting the model on a content edit removes the old model suffix. Independent
+AI-disclosure text remains. A metadata-only update without `--description` leaves
+the historical description and model footer untouched even when `--ai-model` is
+given. An advance without `--comment` does not attribute any user text.
+
 ## JSON Output
 
 All commands support `--json`. Reads return the full resource object. Mutations return:

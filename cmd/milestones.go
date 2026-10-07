@@ -170,6 +170,7 @@ var milestonesCreateCmd = &cobra.Command{
 			GithubMilestone: milestoneGithubMilestoneFlag,
 			Assignees:       milestoneAssigneesFlag,
 			Project:         getProject(),
+			AIModel:         getAIModel(cmd),
 		}
 
 		milestone, err := client.CreateMilestone(req)
@@ -204,6 +205,7 @@ var milestonesUpdateCmd = &cobra.Command{
 			Workflow:        milestoneWorkflowFlag,
 			GithubMilestone: milestoneGithubMilestoneFlag,
 			Project:         getProject(),
+			AIModel:         getAIModel(cmd),
 		}
 
 		milestone, err := client.UpdateMilestone(args[0], req)
@@ -310,6 +312,7 @@ var milestonesCommentCmd = &cobra.Command{
 			Content: milestoneContentFlag,
 			Persona: milestonePersonaFlag,
 			Project: getProject(),
+			AIModel: getAIModel(cmd),
 		}
 
 		comment, err := client.AddMilestoneComment(args[0], req)
@@ -370,6 +373,7 @@ func init() {
 	milestonesCreateCmd.Flags().IntVar(&milestoneGithubMilestoneFlag, "github-milestone", 0, "GitHub milestone number")
 	milestonesCreateCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "App (web, ios, android)")
 	milestonesCreateCmd.Flags().StringVar(&milestoneAssigneesFlag, "assignees", "", "Comma-separated list of assignee IDs")
+	milestonesCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
 	// Update flags
 	milestonesUpdateCmd.Flags().StringVar(&milestoneTitleFlag, "title", "", "New title")
@@ -379,6 +383,7 @@ func init() {
 	milestonesUpdateCmd.Flags().StringVar(&milestoneWorkflowFlag, "workflow", "", "GitHub Actions workflow file (empty to remove)")
 	milestonesUpdateCmd.Flags().IntVar(&milestoneGithubMilestoneFlag, "github-milestone", 0, "GitHub milestone number (0 to remove)")
 	milestonesUpdateCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "App (web, ios, android)")
+	milestonesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 
 	// Epics flags
 	milestonesEpicsCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed epics")
@@ -389,4 +394,5 @@ func init() {
 	// Comment flags
 	milestonesCommentCmd.Flags().StringVar(&milestoneContentFlag, "content", "", "Comment content (required)")
 	milestonesCommentCmd.Flags().StringVar(&milestonePersonaFlag, "persona", "", "Persona name for attribution")
+	milestonesCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 }
