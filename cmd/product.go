@@ -46,7 +46,7 @@ var scenesCmd = &cobra.Command{
 
 A scene is an actor-centred view of the system, with one angle and one zoom
 level. Use cases belong to a scene, and issues belong to a use case.
-IDs may be Basecamp IDs or codes such as SCN-Next-02 (legacy UJ- codes work too).`,
+IDs may be Basecamp IDs or codes such as SC-Next-02 (SCN- and legacy UJ- codes work too).`,
 }
 
 var usecasesCmd = &cobra.Command{
@@ -409,7 +409,7 @@ func (p *productCommand) exampleCode() string {
 	if p.kind == api.KindUseCase {
 		return "UC-NEXT-01"
 	}
-	return "SCN-Next-01"
+	return "SC-Next-01"
 }
 
 func printProductItems(items []api.ProductItem) {

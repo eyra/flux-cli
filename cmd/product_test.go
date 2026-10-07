@@ -76,13 +76,13 @@ func runCommand(t *testing.T, argv []string, json bool, handler http.HandlerFunc
 func TestProductCommandRequests(t *testing.T) {
 	const (
 		project  = "project=fixture-project"
-		item     = `{"id":"1001","code":"SCN-Next-02","title":"SCN-Next-02: Donate","name":"Donate","status":"Refine","completed":false,"comments_count":0,"url":"https://basecamp/1001","use_cases_count":1,"server_only":"kept"}`
+		item     = `{"id":"1001","code":"SC-Next-02","title":"SC-Next-02: Donate","name":"Donate","status":"Refine","completed":false,"comments_count":0,"url":"https://basecamp/1001","use_cases_count":1,"server_only":"kept"}`
 		useCase  = `{"id":"2001","code":"UC-NEXT-01","title":"UC-NEXT-01: Upload","name":"Upload","status":null,"completed":false,"comments_count":0,"url":"https://basecamp/2001","scene":"1001","issues_count":2,"server_only":"kept"}`
 		detail   = `{"id":"2001","code":"UC-NEXT-01","title":"UC-NEXT-01: Upload","status":"Refine","completed":false,"comments_count":1,"scene":"1001","issues_count":1,"project":"fixture-project","description":"<div>Upload <b>data</b></div>","thread":[{"id":"9","author":"Alex","author_id":"101","date":"2026-10-07 12:00","content_html":"<p>Hi</p>","url":"u"}],"linked_issues":[{"id":"3001","title":"Issue","url":"u"}],"server_only":"kept"}`
-		write    = `{"id":"1001","code":"SCN-Next-04","title":"SCN-Next-04: Donate","url":"https://basecamp/1001","server_only":"kept"}`
+		write    = `{"id":"1001","code":"SC-Next-04","title":"SC-Next-04: Donate","url":"https://basecamp/1001","server_only":"kept"}`
 		comment  = `{"id":"9","content":"Hi","url":"u","server_only":"kept"}`
-		resync   = `{"parent_type":"scene","parent_id":"1001","parent_title":"SCN-Next-02: Donate","checked":3,"updated":1,"updates":[{"id":"2001","old_title":"Old","new_title":"New"}],"not_found":["2002"],"server_only":"kept"}`
-		ucLink   = `{"action":"linked","use_case_id":"2001","use_case_title":"UC-NEXT-01: Upload","scene_id":"1001","scene_title":"SCN-Next-02: Donate","server_only":"kept"}`
+		resync   = `{"parent_type":"scene","parent_id":"1001","parent_title":"SC-Next-02: Donate","checked":3,"updated":1,"updates":[{"id":"2001","old_title":"Old","new_title":"New"}],"not_found":["2002"],"server_only":"kept"}`
+		ucLink   = `{"action":"linked","use_case_id":"2001","use_case_title":"UC-NEXT-01: Upload","scene_id":"1001","scene_title":"SC-Next-02: Donate","server_only":"kept"}`
 		issueRaw = `{"id":"3001","ref":"FX-12","title":"Issue","stage":"Development","epic":4001,"milestone":"5001","use_case":"2001","url":"https://basecamp/3001","completed":false,"description_html":"<p>x</p>","server_only":"kept"}`
 	)
 	for _, tc := range []struct {
@@ -95,31 +95,31 @@ func TestProductCommandRequests(t *testing.T) {
 	}{
 		{"scenes list", []string{"scenes", "list"}, "GET", "/api/product/scenes?" + project, nil, `{"scenes":[` + item + `]}`},
 		{"scenes list completed", []string{"scenes", "list", "--completed"}, "GET", "/api/product/scenes?completed=true&" + project, nil, `{"scenes":[` + item + `]}`},
-		{"scenes get", []string{"scenes", "get", "SCN-Next-02"}, "GET", "/api/product/scenes/SCN-Next-02?" + project, nil, item},
+		{"scenes get", []string{"scenes", "get", "SC-Next-02"}, "GET", "/api/product/scenes/SC-Next-02?" + project, nil, item},
 		{"scenes get without thread", []string{"scenes", "get", "1001", "--no-thread"}, "GET", "/api/product/scenes/1001?include_thread=false&" + project, nil, item},
 		{"scenes create", []string{"scenes", "create", "--title", "Donate", "--area", "Next", "--description", "Body", "--status", "Refine", "--ai-model", "m"}, "POST", "/api/product/scenes?" + project,
 			map[string]interface{}{"title": "Donate", "area": "Next", "description": "Body", "status": "Refine", "ai_model": "m"}, write},
-		{"scenes create with code", []string{"scenes", "create", "--title", "Donate", "--code", "SCN-Next-04"}, "POST", "/api/product/scenes?" + project,
-			map[string]interface{}{"title": "Donate", "code": "SCN-Next-04"}, write},
-		{"scenes update", []string{"scenes", "update", "SCN-Next-02", "--title", "Donate more", "--status", "none"}, "PATCH", "/api/product/scenes/SCN-Next-02?" + project,
+		{"scenes create with code", []string{"scenes", "create", "--title", "Donate", "--code", "SC-Next-04"}, "POST", "/api/product/scenes?" + project,
+			map[string]interface{}{"title": "Donate", "code": "SC-Next-04"}, write},
+		{"scenes update", []string{"scenes", "update", "SC-Next-02", "--title", "Donate more", "--status", "none"}, "PATCH", "/api/product/scenes/SC-Next-02?" + project,
 			map[string]interface{}{"title": "Donate more", "status": "none"}, write},
 		{"scenes comment", []string{"scenes", "comment", "1001", "--content", "Hi"}, "POST", "/api/product/scenes/1001/comments?" + project,
 			map[string]interface{}{"content": "Hi"}, comment},
-		{"scenes usecases", []string{"scenes", "usecases", "SCN-Next-02"}, "GET", "/api/product/scenes/SCN-Next-02/use_cases?" + project, nil,
-			`{"scene":{"id":"1001","code":"SCN-Next-02","title":"SCN-Next-02: Donate","url":"u"},"use_cases":[` + useCase + `],"server_only":"kept"}`},
-		{"scenes resync", []string{"scenes", "resync", "SCN-Next-02"}, "POST", "/api/product/scenes/SCN-Next-02/resync?" + project, nil, resync},
-		{"scenes next-code", []string{"scenes", "next-code", "--area", "Next"}, "GET", "/api/product/scenes/next_code?area=Next&" + project, nil, `{"code":"SCN-Next-04","server_only":"kept"}`},
+		{"scenes usecases", []string{"scenes", "usecases", "SC-Next-02"}, "GET", "/api/product/scenes/SC-Next-02/use_cases?" + project, nil,
+			`{"scene":{"id":"1001","code":"SC-Next-02","title":"SC-Next-02: Donate","url":"u"},"use_cases":[` + useCase + `],"server_only":"kept"}`},
+		{"scenes resync", []string{"scenes", "resync", "SC-Next-02"}, "POST", "/api/product/scenes/SC-Next-02/resync?" + project, nil, resync},
+		{"scenes next-code", []string{"scenes", "next-code", "--area", "Next"}, "GET", "/api/product/scenes/next_code?area=Next&" + project, nil, `{"code":"SC-Next-04","server_only":"kept"}`},
 		{"usecases list", []string{"usecases", "list"}, "GET", "/api/product/use_cases?" + project, nil, `{"use_cases":[` + useCase + `]}`},
-		{"usecases list by scene", []string{"usecases", "list", "--scene", "SCN-Next-02", "--completed"}, "GET", "/api/product/use_cases?completed=true&" + project + "&scene=SCN-Next-02", nil, `{"use_cases":[` + useCase + `]}`},
+		{"usecases list by scene", []string{"usecases", "list", "--scene", "SC-Next-02", "--completed"}, "GET", "/api/product/use_cases?completed=true&" + project + "&scene=SC-Next-02", nil, `{"use_cases":[` + useCase + `]}`},
 		{"usecases get", []string{"usecases", "get", "UC-NEXT-01"}, "GET", "/api/product/use_cases/UC-NEXT-01?" + project, nil, detail},
-		{"usecases create", []string{"usecases", "create", "--title", "Upload", "--area", "NEXT", "--scene", "SCN-Next-02", "--ai-model", "m"}, "POST", "/api/product/use_cases?" + project,
-			map[string]interface{}{"title": "Upload", "area": "NEXT", "scene": "SCN-Next-02", "ai_model": "m"}, `{"id":"2001","code":"UC-NEXT-01","title":"UC-NEXT-01: Upload","url":"u","scene":"1001","server_only":"kept"}`},
+		{"usecases create", []string{"usecases", "create", "--title", "Upload", "--area", "NEXT", "--scene", "SC-Next-02", "--ai-model", "m"}, "POST", "/api/product/use_cases?" + project,
+			map[string]interface{}{"title": "Upload", "area": "NEXT", "scene": "SC-Next-02", "ai_model": "m"}, `{"id":"2001","code":"UC-NEXT-01","title":"UC-NEXT-01: Upload","url":"u","scene":"1001","server_only":"kept"}`},
 		{"usecases update", []string{"usecases", "update", "UC-NEXT-01", "--description", "Body", "--code", "UC-NEXT-05"}, "PATCH", "/api/product/use_cases/UC-NEXT-01?" + project,
 			map[string]interface{}{"description": "Body", "code": "UC-NEXT-05"}, write},
 		{"usecases comment", []string{"usecases", "comment", "UC-NEXT-01", "--content", "Hi", "--ai-model", "m"}, "POST", "/api/product/use_cases/UC-NEXT-01/comments?" + project,
 			map[string]interface{}{"content": "Hi", "ai_model": "m"}, comment},
-		{"usecases link", []string{"usecases", "link", "UC-NEXT-01", "--target-type", "scene", "--target-id", "SCN-Next-02"}, "POST", "/api/product/use_cases/UC-NEXT-01/link?" + project,
-			map[string]interface{}{"target_type": "scene", "target_id": "SCN-Next-02", "action": "link"}, ucLink},
+		{"usecases link", []string{"usecases", "link", "UC-NEXT-01", "--target-type", "scene", "--target-id", "SC-Next-02"}, "POST", "/api/product/use_cases/UC-NEXT-01/link?" + project,
+			map[string]interface{}{"target_type": "scene", "target_id": "SC-Next-02", "action": "link"}, ucLink},
 		{"usecases link default type", []string{"usecases", "link", "2001", "--target-id", "1001"}, "POST", "/api/product/use_cases/2001/link?" + project,
 			map[string]interface{}{"target_type": "scene", "target_id": "1001", "action": "link"}, ucLink},
 		{"usecases unlink", []string{"usecases", "unlink", "UC-NEXT-01", "--target-type", "scene", "--target-id", "1001"}, "POST", "/api/product/use_cases/UC-NEXT-01/link?" + project,
@@ -229,7 +229,7 @@ func TestProductCommandErrors(t *testing.T) {
 		{"ambiguous code", 409, `{"error":"ambiguous_code","ids":["1","2"]}`, "ambiguous_code"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := runCommand(t, []string{"scenes", "get", "SCN-Next-02"}, false, func(w http.ResponseWriter, r *http.Request) {
+			_, err := runCommand(t, []string{"scenes", "get", "SC-Next-02"}, false, func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tc.status)
 				io.WriteString(w, tc.body)
 			})
