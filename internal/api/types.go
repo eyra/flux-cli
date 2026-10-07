@@ -25,7 +25,7 @@ type CreateIssueRequest struct {
 	Title       string  `json:"title"`
 	Description string  `json:"description,omitempty"`
 	Stage       string  `json:"stage,omitempty"`
-	Program     string  `json:"program,omitempty"`
+	Context     string  `json:"context,omitempty"`
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
@@ -38,6 +38,7 @@ type CreateIssueRequest struct {
 // through LinkIssue, as for CreateIssueRequest.
 type UpdateIssueRequest struct {
 	Title       string  `json:"title,omitempty"`
+	Context     string  `json:"context,omitempty"`
 	Description string  `json:"description,omitempty"`
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
@@ -262,7 +263,7 @@ type AppSignalDashboard struct {
 // ListIssuesOptions contains options for listing issues
 type ListIssuesOptions struct {
 	Stage     string
-	Program   string
+	Context   string
 	App       string
 	Completed bool
 	Project   string

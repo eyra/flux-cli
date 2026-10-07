@@ -46,7 +46,8 @@ type issueFields struct {
 	Title       string         `json:"title"`
 	Stage       string         `json:"stage"`
 	SubStage    string         `json:"sub_stage,omitempty"`
-	Program     string         `json:"program,omitempty"`
+	Context     string         `json:"context,omitempty"`
+	Program     string         `json:"program,omitempty"` // deprecated alias of Context, from older servers
 	Size        string         `json:"size,omitempty"`
 	Priority    int            `json:"priority,omitempty"`
 	App         string         `json:"app,omitempty"`
@@ -65,6 +66,15 @@ type issueFields struct {
 type Issue struct {
 	issueFields
 	raw json.RawMessage
+}
+
+// DisplayContext is the issue's context, the bracketed title prefix. Older
+// servers only report it under its deprecated name, program.
+func (i Issue) DisplayContext() string {
+	if i.Context != "" {
+		return i.Context
+	}
+	return i.Program
 }
 
 func (i *Issue) UnmarshalJSON(data []byte) error {
@@ -298,8 +308,10 @@ func (c *Client) ListIssues(opts ListIssuesOptions) ([]Issue, error) {
 	if opts.Stage != "" {
 		params.Set("stage", opts.Stage)
 	}
-	if opts.Program != "" {
-		params.Set("program", opts.Program)
+	if opts.Context != "" {
+		params.Set("context", opts.Context)
+		// Older servers only know the deprecated name.
+		params.Set("program", opts.Context)
 	}
 	if opts.App != "" {
 		params.Set("app", opts.App)
