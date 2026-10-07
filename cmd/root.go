@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -109,6 +110,22 @@ func printServerOK(response json.RawMessage, fields ...string) {
 func printJSON(v interface{}) {
 	data, _ := json.MarshalIndent(v, "", "  ")
 	fmt.Println(string(data))
+}
+
+// removedCommand is a hidden command that only fails with message, so old
+// scripts that still call it learn what to use instead. It accepts any
+// arguments and flags.
+func removedCommand(use, message string) *cobra.Command {
+	return &cobra.Command{
+		Use:                use,
+		Short:              "Removed",
+		Hidden:             true,
+		DisableFlagParsing: true,
+		SilenceUsage:       true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return errors.New(message)
+		},
+	}
 }
 
 func getAIModel(cmd *cobra.Command) *string {

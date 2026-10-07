@@ -177,6 +177,9 @@ var issuesCreateCmd = &cobra.Command{
 		}
 
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		if err := checkUseCaseTarget(cmd, client); err != nil {
+			return fmt.Errorf("no issue was created: %w", err)
+		}
 
 		req := api.CreateIssueRequest{
 			Title:       issueTitleFlag,
@@ -211,6 +214,9 @@ var issuesUpdateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		if err := checkUseCaseTarget(cmd, client); err != nil {
+			return fmt.Errorf("issue %s was not updated: %w", args[0], err)
+		}
 
 		req := api.UpdateIssueRequest{
 			Title:       issueTitleFlag,
@@ -461,6 +467,24 @@ func linkIssueParents(cmd *cobra.Command, client *api.Client, id string, allowUn
 		})
 	}
 	return links, nil
+}
+
+// checkUseCaseTarget reads the use case that --usecase names, before the
+// issue is written. A server without Scenes, a project without Product or an
+// unknown use case then fails before anything changes, instead of leaving an
+// issue behind without its link.
+func checkUseCaseTarget(cmd *cobra.Command, client *api.Client) error {
+	if !cmd.Flags().Changed("usecase") {
+		return nil
+	}
+	target, _ := cmd.Flags().GetString("usecase")
+	if target == "" {
+		return nil
+	}
+	if _, err := client.GetProductItem(api.KindUseCase, target, getProject(), false); err != nil {
+		return fmt.Errorf("cannot link use case %s: %w", target, err)
+	}
+	return nil
 }
 
 func currentParent(issue *api.Issue, targetType string) string {

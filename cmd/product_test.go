@@ -226,7 +226,9 @@ func TestProductCommandErrors(t *testing.T) {
 		{"older server", 404, `{"errors":{"detail":"Not Found"}}`, "not supported by this server"},
 		{"older server without JSON", 404, `404 page not found`, "not supported by this server"},
 		{"unknown scene", 404, `{"error":"Scene not found"}`, "not found: Scene not found"},
-		{"ambiguous code", 409, `{"error":"ambiguous_code","ids":["1","2"]}`, "ambiguous_code"},
+		{"ambiguous code", 409, `{"error":"ambiguous_code","message":"Code SC-Next-02 matches several items; use an ID","ids":["1","2"]}`, "ambiguous_code: Code SC-Next-02 matches several items; use an ID. Matching IDs: 1, 2"},
+		{"ambiguous code without a message", 409, `{"error":"ambiguous_code","ids":["1","2"]}`, "ambiguous_code: the code matches several items; use an ID. Matching IDs: 1, 2"},
+		{"ambiguous code without IDs", 409, `{"error":"ambiguous_code"}`, "ambiguous_code: the code matches several items; use an ID"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := runCommand(t, []string{"scenes", "get", "SC-Next-02"}, false, func(w http.ResponseWriter, r *http.Request) {
@@ -248,6 +250,37 @@ func TestProductCommandErrors(t *testing.T) {
 			t.Fatalf("error = %v; want product_not_configured", err)
 		}
 	})
+}
+
+func TestRemovedCommands(t *testing.T) {
+	for _, tc := range []struct {
+		argv []string
+		want string
+	}{
+		{[]string{"epics", "link", "4001", "--milestone", "5001"}, "flux issues link"},
+		{[]string{"epics", "link", "4001", "--milestone", "5001", "--unlink"}, "flux issues link"},
+		{[]string{"milestones", "epics", "5001", "--completed"}, "flux milestones issues"},
+	} {
+		t.Run(strings.Join(tc.argv, " "), func(t *testing.T) {
+			command, rest, err := rootCmd.Find(tc.argv)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !command.Hidden {
+				t.Errorf("%s should be hidden", command.CommandPath())
+			}
+			if err := command.ParseFlags(rest); err != nil {
+				t.Fatal(err)
+			}
+			output, err := captureStdout(t, func() error { return command.RunE(command, command.Flags().Args()) })
+			if err == nil || !strings.Contains(err.Error(), tc.want) || strings.Contains(err.Error(), "upgrade") {
+				t.Fatalf("error = %v; want it to point to %q", err, tc.want)
+			}
+			if output != "" {
+				t.Errorf("output = %q; want none", output)
+			}
+		})
+	}
 }
 
 func TestProductReadCommandsRejectAIModel(t *testing.T) {

@@ -27,6 +27,10 @@ func TestIssueWriteLinks(t *testing.T) {
 		current = `{"id":"3001","title":"Issue","stage":"Development","epic":4001,"milestone":"5001","use_case":null,"completed":false}`
 	)
 	createBody := map[string]interface{}{"title": "Issue", "app": "web", "project": "fixture-project"}
+	useCase := `{"id":"2001","code":"UC-NEXT-01","title":"UC-NEXT-01: Upload","completed":false}`
+	checkUseCase := func(status int, response string) fixtureRequest {
+		return fixtureRequest{"GET", "/api/product/use_cases/UC-NEXT-01?include_thread=false&project=fixture-project", nil, status, response}
+	}
 	link := func(targetType, targetID, action string, status int, response string) fixtureRequest {
 		return fixtureRequest{"POST", "/api/delivery/issues/3001/link",
 			map[string]interface{}{"target_type": targetType, "target_id": targetID, "action": action, "project": "fixture-project"}, status, response}
@@ -50,6 +54,7 @@ func TestIssueWriteLinks(t *testing.T) {
 			name: "create with epic, milestone and use case",
 			argv: []string{"issues", "create", "--title", "Issue", "--app", "web", "--epic", "4001", "--milestone", "5001", "--usecase", "UC-NEXT-01"},
 			requests: []fixtureRequest{
+				checkUseCase(200, useCase),
 				{"POST", "/api/delivery/issues", createBody, 201, created},
 				link("epic", "4001", "link", 200, `{"action":"linked","issue_id":"3001","epic_id":"4001"}`),
 				link("milestone", "5001", "link", 200, `{"action":"linked","issue_id":"3001","milestone_id":"5001"}`),
@@ -62,12 +67,48 @@ func TestIssueWriteLinks(t *testing.T) {
 			name: "create with a use case that fails to link",
 			argv: []string{"issues", "create", "--title", "Issue", "--app", "web", "--usecase", "UC-NEXT-01"},
 			requests: []fixtureRequest{
+				checkUseCase(200, useCase),
 				{"POST", "/api/delivery/issues", createBody, 201, created},
-				link("use_case", "UC-NEXT-01", "link", 404, `{"error":"product_not_configured","message":"This project has no Product to-do set configured"}`),
+				link("use_case", "UC-NEXT-01", "link", 422, `{"error":"wrong_target_type"}`),
 			},
 			json: map[string]interface{}{"id": "3001"},
 			text: []string{"Created issue 3001: Issue"},
-			err:  "issue 3001 was created, but could not link use case UC-NEXT-01: product_not_configured",
+			err:  "issue 3001 was created, but could not link use case UC-NEXT-01: failed to link issue (422)",
+		},
+		{
+			name:     "create with a use case on a project without Product",
+			argv:     []string{"issues", "create", "--title", "Issue", "--app", "web", "--usecase", "UC-NEXT-01"},
+			requests: []fixtureRequest{checkUseCase(404, `{"error":"product_not_configured","message":"This project has no Product to-do set configured"}`)},
+			err:      "no issue was created: cannot link use case UC-NEXT-01: product_not_configured",
+		},
+		{
+			name:     "create with a use case on a server without Scenes",
+			argv:     []string{"issues", "create", "--title", "Issue", "--app", "web", "--usecase", "UC-NEXT-01"},
+			requests: []fixtureRequest{checkUseCase(404, `{"errors":{"detail":"Not Found"}}`)},
+			err:      "no issue was created: cannot link use case UC-NEXT-01: not supported by this server",
+		},
+		{
+			name:     "create with an unknown use case",
+			argv:     []string{"issues", "create", "--title", "Issue", "--app", "web", "--usecase", "UC-NEXT-01"},
+			requests: []fixtureRequest{checkUseCase(404, `{"error":"Use case not found"}`)},
+			err:      "no issue was created: cannot link use case UC-NEXT-01: not found: Use case not found",
+		},
+		{
+			name:     "update with a use case on a server without Scenes",
+			argv:     []string{"issues", "update", "3001", "--title", "Issue", "--usecase", "UC-NEXT-01"},
+			requests: []fixtureRequest{checkUseCase(404, `404 page not found`)},
+			err:      "issue 3001 was not updated: cannot link use case UC-NEXT-01: not supported by this server",
+		},
+		{
+			name: "update links a use case",
+			argv: []string{"issues", "update", "3001", "--usecase", "UC-NEXT-01"},
+			requests: []fixtureRequest{
+				checkUseCase(200, useCase),
+				{"PATCH", "/api/delivery/issues/3001", map[string]interface{}{"project": "fixture-project"}, 200, updated},
+				link("use_case", "UC-NEXT-01", "link", 200, `{"action":"linked","issue_id":"3001","use_case_id":"2001"}`),
+			},
+			json: map[string]interface{}{"id": "3001", "use_case": "2001"},
+			text: []string{"Updated issue 3001: Issue", "Linked to use case 2001"},
 		},
 		{
 			name:     "create with a context",
@@ -172,6 +213,12 @@ func TestIssueWriteLinks(t *testing.T) {
 				}
 				if next != len(tc.requests) {
 					t.Fatalf("got %d requests; want %d", next, len(tc.requests))
+				}
+				if tc.json == nil && tc.text == nil {
+					if output != "" {
+						t.Errorf("output = %q; want none", output)
+					}
+					return
 				}
 				if asJSON {
 					var got map[string]interface{}

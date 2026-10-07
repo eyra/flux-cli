@@ -126,13 +126,6 @@ type UpdateEpicRequest struct {
 	AIModel     *string `json:"ai_model,omitempty"`
 }
 
-// LinkEpicRequest is the request body for linking an epic to a milestone
-type LinkEpicRequest struct {
-	MilestoneID string `json:"milestone_id"`
-	Action      string `json:"action,omitempty"` // "link" or "unlink"
-	Project     string `json:"project,omitempty"`
-}
-
 // Milestone represents a milestone in release planning
 type Milestone struct {
 	ID              string        `json:"id"`
