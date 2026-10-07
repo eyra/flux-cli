@@ -268,3 +268,12 @@ func TestProductReadCommandsRejectAIModel(t *testing.T) {
 		})
 	}
 }
+
+func TestCountLabel(t *testing.T) {
+	cases := map[int]string{0: "0 use cases", 1: "1 use case", 2: "2 use cases"}
+	for n, want := range cases {
+		if got := countLabel(n, "use case", "use cases"); got != want {
+			t.Errorf("countLabel(%d) = %q, want %q", n, got, want)
+		}
+	}
+}

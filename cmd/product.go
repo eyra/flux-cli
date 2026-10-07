@@ -419,13 +419,21 @@ func printProductItems(items []api.ProductItem) {
 			line += fmt.Sprintf("  [%s]", item.Status)
 		}
 		if item.UseCasesCount != nil {
-			line += fmt.Sprintf("  (%d use cases)", *item.UseCasesCount)
+			line += fmt.Sprintf("  (%s)", countLabel(*item.UseCasesCount, "use case", "use cases"))
 		}
 		if item.IssuesCount != nil {
-			line += fmt.Sprintf("  (%d issues)", *item.IssuesCount)
+			line += fmt.Sprintf("  (%s)", countLabel(*item.IssuesCount, "issue", "issues"))
 		}
 		fmt.Println(line)
 	}
+}
+
+// countLabel returns "1 issue" or "N issues".
+func countLabel(n int, singular, plural string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, singular)
+	}
+	return fmt.Sprintf("%d %s", n, plural)
 }
 
 func printLinked(heading string, links []api.LinkedIssue) {
