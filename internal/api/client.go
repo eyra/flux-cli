@@ -23,6 +23,9 @@ var (
 	// ErrProductNotConfigured means the project has no Product to-do set, so
 	// it has no scenes or use cases.
 	ErrProductNotConfigured = errors.New("product_not_configured: this project has no Product (scenes and use cases) configured on the server; pick another project with --project")
+	// ErrAmbiguousCode means a code matches several items; the error names
+	// their IDs.
+	ErrAmbiguousCode = errors.New("ambiguous_code")
 )
 
 const (
@@ -253,11 +256,16 @@ func (c *Client) handleResponseError(resp *http.Response, action string) error {
 	body, _ := io.ReadAll(resp.Body)
 
 	var payload struct {
-		Error string `json:"error"`
+		Error   string   `json:"error"`
+		Message string   `json:"message"`
+		IDs     []string `json:"ids"`
 	}
 	json.Unmarshal(body, &payload) //nolint:errcheck
-	if payload.Error == "product_not_configured" {
+	switch payload.Error {
+	case "product_not_configured":
 		return ErrProductNotConfigured
+	case "ambiguous_code":
+		return ambiguousCodeError(payload.Message, payload.IDs)
 	}
 
 	switch resp.StatusCode {
@@ -271,6 +279,18 @@ func (c *Client) handleResponseError(resp *http.Response, action string) error {
 	default:
 		return fmt.Errorf("failed to %s (%d): %s", action, resp.StatusCode, string(body))
 	}
+}
+
+// ambiguousCodeError names the IDs that share a code, so the caller can pick
+// one.
+func ambiguousCodeError(message string, ids []string) error {
+	if message == "" {
+		message = "the code matches several items; use an ID"
+	}
+	if len(ids) == 0 {
+		return fmt.Errorf("%w: %s", ErrAmbiguousCode, message)
+	}
+	return fmt.Errorf("%w: %s. Matching IDs: %s", ErrAmbiguousCode, message, strings.Join(ids, ", "))
 }
 
 func (c *Client) GetIdentity() (*Identity, error) {
@@ -705,21 +725,6 @@ func (c *Client) ListEpicIssues(id string, completed bool, project string) ([]Is
 	return response.Issues, nil
 }
 
-func (c *Client) LinkEpic(id string, req LinkEpicRequest) error {
-	endpoint := fmt.Sprintf("/api/delivery/epics/%s/link", url.PathEscape(id))
-	resp, err := c.post(endpoint, req)
-	if err != nil {
-		return fmt.Errorf("failed to link epic: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return c.handleResponseError(resp, "link epic")
-	}
-
-	return nil
-}
-
 func (c *Client) AddEpicComment(id string, req CommentRequest) (*CommentResponse, error) {
 	endpoint := fmt.Sprintf("/api/delivery/epics/%s/comments", url.PathEscape(id))
 	resp, err := c.post(endpoint, req)
@@ -840,38 +845,6 @@ func (c *Client) UpdateMilestone(id string, req UpdateMilestoneRequest) (*Milest
 	}
 
 	return &milestone, nil
-}
-
-func (c *Client) ListMilestoneEpics(id string, completed bool, project string) ([]Epic, error) {
-	params := url.Values{}
-	if completed {
-		params.Set("include_completed", "true")
-	}
-	if project != "" {
-		params.Set("project", project)
-	}
-
-	endpoint := fmt.Sprintf("/api/delivery/milestones/%s/epics", url.PathEscape(id))
-	if len(params) > 0 {
-		endpoint += "?" + params.Encode()
-	}
-
-	resp, err := c.get(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch milestone epics: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.handleResponseError(resp, "list milestone epics")
-	}
-
-	var response EpicsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return response.Epics, nil
 }
 
 func (c *Client) ListMilestoneIssues(id string, completed bool, project string) ([]Issue, error) {

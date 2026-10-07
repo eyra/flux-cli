@@ -134,7 +134,8 @@ Projects with a Product to-do set plan product work as **Scene → Use Case → 
 
 **Rules:**
 - Each child has at most one parent: a use case belongs to one scene, an issue to one use case. Linking to another parent moves the child.
-- `issues create` and `issues update` link through `--epic`, `--milestone` and `--usecase`; on update an empty value (`--usecase ""`) removes that link. If the issue is created but a link fails, the command fails with "issue <id> was created, but could not link …": link it with `flux issues link` instead of creating it again.
+- `issues create` and `issues update` link through `--epic`, `--milestone` and `--usecase`; on update an empty value (`--usecase ""`) removes that link. With `--usecase`, the command reads the use case first, so an unknown use case, a project without Product or a server without Scenes fails before anything is written ("no issue was created: …"). If the issue is created but a link still fails, the command fails with "issue <id> was created, but could not link …": link it with `flux issues link` instead of creating it again.
+- Epics are not linked to milestones. Link issues to an epic or milestone with `flux issues link`; `flux epics link` and `flux milestones epics` were removed.
 - An issue's **context** is its bracketed title prefix (`[Dev]`, `[Web]`, or something else such as `[UC-NEXT-01]`), formerly called the program. `--context` on `issues create`/`update` sets it, replacing any existing prefix; `issues list --context` filters on it. `--program` is a deprecated alias; don't use it.
 - A use case is optional on an issue. Link product work to its use case when one exists; bugs, chores and triage findings may have none. Epics and milestones still work as before, next to the use case.
 - Scenes and use cases are completed by hand in Basecamp; there is no complete command.
@@ -354,7 +355,7 @@ to the signed-in principal; do not compare display names or persona labels.
 |-------|-----|
 | `unauthorized` | Run `flux auth login --env prod --project <key> --json` (use `--env test` only for explicit test verification) |
 | `not found` | Verify the ID or code exists in the selected project |
-| `ambiguous_code` | Several items share the code (e.g. an `xx` draft); use the Basecamp ID |
+| `ambiguous_code` | Several items share the code (e.g. an `xx` draft); the error lists the matching IDs, use one of them |
 | `product_not_configured` | The project has no scenes or use cases; check `--project` |
 | `not supported by this server` | The server is older than the CLI; wait for the server release |
 | Non-zero exit | Check stderr for the error message |

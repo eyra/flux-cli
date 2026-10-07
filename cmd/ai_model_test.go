@@ -125,8 +125,8 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 func TestUnsupportedCommandsRejectAIModel(t *testing.T) {
 	for _, command := range []*cobra.Command{
 		issuesListCmd, issuesGetCmd, issuesDeleteCmd, issuesLinkCmd, issuesAssignCmd,
-		epicsListCmd, epicsGetCmd, epicsIssuesCmd, epicsLinkCmd, epicsResyncCmd,
-		milestonesListCmd, milestonesGetCmd, milestonesEpicsCmd, milestonesIssuesCmd, milestonesResyncCmd,
+		epicsListCmd, epicsGetCmd, epicsIssuesCmd, epicsResyncCmd,
+		milestonesListCmd, milestonesGetCmd, milestonesIssuesCmd, milestonesResyncCmd,
 		commentsDeleteCmd, authStatusCmd, personasListCmd,
 	} {
 		t.Run(command.CommandPath(), func(t *testing.T) {

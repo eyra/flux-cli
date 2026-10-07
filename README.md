@@ -86,8 +86,8 @@ linking to another parent moves the child. A use case is optional on an issue:
 bugs, chores and triage findings may have none. IDs may be Basecamp IDs or
 codes: `SC-Next-02` (`SCN-Next-02` and legacy `UJ-Next-02` work too) or
 `UC-NEXT-01`, in any case and with or without leading zeros. Unnumbered drafts
-use `xx`; a code that several items share returns `ambiguous_code`, so use the
-Basecamp ID.
+use `xx`; a code that several items share fails with `ambiguous_code` and lists
+the matching IDs, so use one of those Basecamp IDs.
 
 ```bash
 # Scenes
@@ -122,9 +122,11 @@ flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
 
 `issues create` and `issues update` link the issue through `--epic`,
 `--milestone` and `--usecase` after writing it, with the same link endpoint as
-`issues link`. If a link fails after the issue was created, the command exits
-with "issue <id> was created, but could not link …"; link it with `issues link`
-rather than creating it again.
+`issues link`. With `--usecase`, the command first reads the use case, so a
+server without Scenes, a project without Product or an unknown use case fails
+before anything is written. If a link still fails after the issue was created,
+the command exits with "issue <id> was created, but could not link …"; link it
+with `issues link` rather than creating it again.
 
 An issue's **context** is the bracketed prefix of its title: `Dev` in
 `[Dev] Fix login`, `UC-NEXT-01` in `[UC-NEXT-01] Show the results`. It used to
@@ -147,6 +149,10 @@ A server older than this CLI returns "not supported by this server".
 The CLI calls `/api/delivery` for issues, milestones and epics, and
 `/api/product` for scenes and use cases. Against an older server without
 `/api/delivery` it falls back to `/api/dev` automatically.
+
+Flux does not link epics to milestones. The old `epics link` and
+`milestones epics` commands are removed; link issues with `flux issues link`
+and list a milestone's issues with `flux milestones issues`.
 
 ### List personas
 
