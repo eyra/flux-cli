@@ -27,7 +27,12 @@ var commentsUpdateCmd = &cobra.Command{
 		}
 
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
-		result, err := client.UpdateComment(args[0], commentContent, getProject(), commentPersona)
+		result, err := client.UpdateComment(args[0], api.CommentRequest{
+			Content: commentContent,
+			Persona: commentPersona,
+			Project: getProject(),
+			AIModel: getAIModel(cmd),
+		})
 		if err != nil {
 			return err
 		}
@@ -64,6 +69,7 @@ var commentsDeleteCmd = &cobra.Command{
 func init() {
 	commentsUpdateCmd.Flags().StringVar(&commentContent, "content", "", "New comment content")
 	commentsUpdateCmd.Flags().StringVar(&commentPersona, "persona", "", "Persona name")
+	commentsUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 
 	commentsCmd.AddCommand(commentsUpdateCmd, commentsDeleteCmd)
 	rootCmd.AddCommand(commentsCmd)

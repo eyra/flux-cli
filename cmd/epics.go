@@ -141,6 +141,7 @@ var epicsCreateCmd = &cobra.Command{
 			Milestone:   epicMilestoneFlag,
 			Assignees:   epicAssigneesFlag,
 			Project:     getProject(),
+			AIModel:     getAIModel(cmd),
 		}
 
 		epic, err := client.CreateEpic(req)
@@ -172,6 +173,7 @@ var epicsUpdateCmd = &cobra.Command{
 			Milestone:   epicMilestoneFlag,
 			Branch:      epicBranchFlag,
 			Project:     getProject(),
+			AIModel:     getAIModel(cmd),
 		}
 
 		epic, err := client.UpdateEpic(args[0], req)
@@ -280,6 +282,7 @@ var epicsCommentCmd = &cobra.Command{
 			Content: epicContentFlag,
 			Persona: epicPersonaFlag,
 			Project: getProject(),
+			AIModel: getAIModel(cmd),
 		}
 
 		comment, err := client.AddEpicComment(args[0], req)
@@ -336,12 +339,14 @@ func init() {
 	epicsCreateCmd.Flags().StringVar(&epicDescriptionFlag, "description", "", "Epic description")
 	epicsCreateCmd.Flags().StringVar(&epicMilestoneFlag, "milestone", "", "Milestone ID to link to")
 	epicsCreateCmd.Flags().StringVar(&epicAssigneesFlag, "assignees", "", "Comma-separated list of assignee IDs")
+	epicsCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
 	// Update flags
 	epicsUpdateCmd.Flags().StringVar(&epicTitleFlag, "title", "", "New title")
 	epicsUpdateCmd.Flags().StringVar(&epicDescriptionFlag, "description", "", "New description")
 	epicsUpdateCmd.Flags().StringVar(&epicMilestoneFlag, "milestone", "", "Milestone ID (empty to remove)")
 	epicsUpdateCmd.Flags().StringVar(&epicBranchFlag, "branch", "", "Branch name (empty to remove)")
+	epicsUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 
 	// Issues flags
 	epicsIssuesCmd.Flags().BoolVar(&epicCompletedFlag, "completed", false, "Include completed issues")
@@ -353,4 +358,5 @@ func init() {
 	// Comment flags
 	epicsCommentCmd.Flags().StringVar(&epicContentFlag, "content", "", "Comment content (required)")
 	epicsCommentCmd.Flags().StringVar(&epicPersonaFlag, "persona", "", "Persona name for attribution")
+	epicsCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 }

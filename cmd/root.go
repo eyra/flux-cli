@@ -85,6 +85,14 @@ func printOK(fields ...string) {
 	fmt.Println(string(data))
 }
 
+func getAIModel(cmd *cobra.Command) *string {
+	if !cmd.Flags().Changed("ai-model") {
+		return nil
+	}
+	model, _ := cmd.Flags().GetString("ai-model")
+	return &model
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "flux",
 	Short: "Flux CLI - Project management from the command line",

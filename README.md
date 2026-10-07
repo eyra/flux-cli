@@ -73,6 +73,40 @@ the name or persona attribution.
 flux personas list
 ```
 
+### AI model attribution on content
+
+Use optional `--ai-model` to declare which model generated text you supply:
+
+```bash
+flux issues comment 12345 --content "Investigated the failure." --ai-model "openai/gpt-5" --json
+flux comments update 67890 --content "Updated findings." --ai-model "anthropic/claude-sonnet-4" --json
+```
+
+Supported commands are `issues`, `epics`, and `milestones` **create**, **update**
+(for supplied descriptions), and **comment**; **comments update**; and
+**issues advance** (for its optional `--comment`, not the automatic stage comment).
+The flag is not global and is unavailable on reads, deletes, links, assignments,
+resyncs, and other operations.
+
+The CLI forwards the exact string as JSON `ai_model`, including provider/model
+IDs, whitespace, and HTML-looking text. When omitted, the JSON field is omitted;
+no model is inferred from a persona, credentials, or environment. This is
+caller-declared display metadata, not verified identity: it does not invoke or
+select a model, change authentication, or change environment/project selection.
+
+The server renders a single code-block footer, with only Flux and the model name bold and no italics:
+
+- Without a model, or with an empty/whitespace-only value: `<pre>Assisted by <strong>Flux</strong></pre>`
+- With `--ai-model "openai/gpt-5"`: `<pre>Assisted by <strong>Flux</strong> · Generated with <strong>openai/gpt-5</strong></pre>`
+
+The server escapes model text as HTML and does not expand its `@mentions`.
+Content edits replace the previous generated footer rather than accumulating
+footers; editing content without a model removes its old model suffix.
+Independent AI-disclosure text is retained. Metadata-only updates without a
+description leave the historical content and model footer unchanged, even if
+`--ai-model` is supplied. Advancing without `--comment` likewise attributes no
+user text.
+
 ### Environments
 
 ```bash
