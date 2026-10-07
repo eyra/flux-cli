@@ -76,7 +76,7 @@ Scenes and use cases live in a project's Product to-do set (Next Platform:
 `--project next`). The model is Scene → Use Case → Issue:
 
 - A **scene** (formerly "User Journey") is an actor-centred view of the system
-  with one angle and one zoom level. Code: `SCN-<Area>-NN`.
+  with one angle and one zoom level. Code: `SC-<Area>-NN`.
 - A **use case** works out part of a scene as a complete software design.
   Code: `UC-<AREA>-NN`.
 - An **issue** implements (part of) a use case.
@@ -84,30 +84,31 @@ Scenes and use cases live in a project's Product to-do set (Next Platform:
 An issue belongs to at most one use case, and a use case to at most one scene;
 linking to another parent moves the child. A use case is optional on an issue:
 bugs, chores and triage findings may have none. IDs may be Basecamp IDs or
-codes: `SCN-Next-02` (legacy `UJ-Next-02` works too) or `UC-NEXT-01`, in any
-case and with or without leading zeros. Unnumbered drafts use `xx`; a code that
-several items share returns `ambiguous_code`, so use the Basecamp ID.
+codes: `SC-Next-02` (`SCN-Next-02` and legacy `UJ-Next-02` work too) or
+`UC-NEXT-01`, in any case and with or without leading zeros. Unnumbered drafts
+use `xx`; a code that several items share returns `ambiguous_code`, so use the
+Basecamp ID.
 
 ```bash
 # Scenes
 flux scenes list [--completed]
-flux scenes get SCN-Next-02 [--no-thread]
-flux scenes create --title "Donate data" --area Next [--code SCN-Next-04] [--status Refine] [--description ...]
-flux scenes update SCN-Next-02 [--title ...] [--code ...] [--status none] [--description ...]
-flux scenes comment SCN-Next-02 --content "..."
-flux scenes next-code --area Next     # print the next free code, e.g. SCN-Next-04
-flux scenes usecases SCN-Next-02      # use cases linked to the scene
-flux scenes resync SCN-Next-02        # refresh the linked use case titles
+flux scenes get SC-Next-02 [--no-thread]
+flux scenes create --title "Donate data" --area Next [--code SC-Next-04] [--status Refine] [--description ...]
+flux scenes update SC-Next-02 [--title ...] [--code ...] [--status none] [--description ...]
+flux scenes comment SC-Next-02 --content "..."
+flux scenes next-code --area Next     # print the next free code, e.g. SC-Next-04
+flux scenes usecases SC-Next-02      # use cases linked to the scene
+flux scenes resync SC-Next-02        # refresh the linked use case titles
 
 # Use cases
-flux usecases list [--scene SCN-Next-02] [--completed]
+flux usecases list [--scene SC-Next-02] [--completed]
 flux usecases get UC-NEXT-01 [--no-thread]
-flux usecases create --title "Upload data" --area NEXT [--scene SCN-Next-02]
+flux usecases create --title "Upload data" --area NEXT [--scene SC-Next-02]
 flux usecases update UC-NEXT-01 [--title ...] [--code ...] [--status ...] [--description ...]
 flux usecases comment UC-NEXT-01 --content "..."
 flux usecases next-code --area NEXT   # print the next free code, e.g. UC-NEXT-03
-flux usecases link UC-NEXT-01 --target-type scene --target-id SCN-Next-02
-flux usecases unlink UC-NEXT-01 --target-type scene --target-id SCN-Next-02
+flux usecases link UC-NEXT-01 --target-type scene --target-id SC-Next-02
+flux usecases unlink UC-NEXT-01 --target-type scene --target-id SC-Next-02
 flux usecases issues UC-NEXT-01       # issues linked to the use case
 flux usecases resync UC-NEXT-01       # refresh the linked issue titles
 

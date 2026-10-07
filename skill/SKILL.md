@@ -48,7 +48,7 @@ CLI for managing issues, epics, milestones, scenes, use cases, and AppSignal inc
 3. **Select the project explicitly** — use `flux` for Flux Platform, `next` for Next Platform, and `feldspar` for Feldspar. Production also has `devops`, `scriptdev`, and `website`. Resolve the key from the request or project configuration; do not rely on CLI defaults. Discover available projects with `flux projects list --env prod --project <key> --json` using a known key.
 4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login --env prod --project <key> --json` and retry. For explicit test verification, authenticate to `--env test` instead.
 5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `issues update --title`; `issues advance` does not accept `--title`.
-6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID. Scenes and use cases also take their code (`SCN-Next-02`, `UC-NEXT-01`).
+6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID. Scenes and use cases also take their code (`SC-Next-02`, `UC-NEXT-01`).
 7. **Persona attribution** — use `--persona <name>` on issue create/update/comment/advance commands when acting on behalf of an AI persona (e.g. `--persona sam`).
 8. **Model attribution** — content-writing commands support `--ai-model <model>` for a caller-declared footer. Preserve it when supplied; do not invent a model identity. It is independent of `--persona`.
 
@@ -130,7 +130,7 @@ Projects with a Product to-do set plan product work as **Scene → Use Case → 
 - **Use Case**: part of a Scene worked out as a complete software design (main success scenario, alternative flows, exceptions). Each can ship to production on its own. Written by the software designer.
 - **Issue**: delivery work that implements (part of) a Use Case.
 
-**Codes** start the title: `SCN-<Area>-NN` for scenes (legacy `UJ-<Area>-NN` is still accepted) and `UC-<AREA>-NN` for use cases. Matching ignores case and leading zeros; `xx` marks an unnumbered draft. Don't pick numbers yourself: `create --area <Area>` gives the title the next free code, `--code` sets one explicitly, and a title that already starts with a code keeps it. `next-code --area <Area>` prints the next free code without creating anything.
+**Codes** start the title: `SC-<Area>-NN` for scenes (`SCN-<Area>-NN` and legacy `UJ-<Area>-NN` are still accepted) and `UC-<AREA>-NN` for use cases. Matching ignores case and leading zeros; `xx` marks an unnumbered draft. Don't pick numbers yourself: `create --area <Area>` gives the title the next free code, `--code` sets one explicitly, and a title that already starts with a code keeps it. `next-code --area <Area>` prints the next free code without creating anything.
 
 **Rules:**
 - Each child has at most one parent: a use case belongs to one scene, an issue to one use case. Linking to another parent moves the child.
@@ -196,10 +196,10 @@ flux issues link <issue_id> --target-type usecase --target-id UC-NEXT-01 --env p
 
 ```bash
 # Numbered with the next free UC-NEXT-NN code and linked to the scene in one step
-flux usecases create --title "Link existing account during SURFconext sign-in" --area NEXT --scene SCN-Next-02 --env prod --project next --json
+flux usecases create --title "Link existing account during SURFconext sign-in" --area NEXT --scene SC-Next-02 --env prod --project next --json
 
 # Or link an existing use case (moves it if it had another scene)
-flux usecases link UC-NEXT-01 --target-type scene --target-id SCN-Next-02 --env prod --project next --json
+flux usecases link UC-NEXT-01 --target-type scene --target-id SC-Next-02 --env prod --project next --json
 ```
 
 ### Advance an issue through stages
