@@ -71,10 +71,21 @@ the name or persona attribution.
 
 ### Scenes and use cases
 
-Scenes and use cases live in a project's Product to-do set. The model is
-Scene → Use Case → Issue: an issue belongs to at most one use case, and a use
-case to at most one scene. IDs may be Basecamp IDs or codes: `SCN-Next-02`
-(legacy `UJ-Next-02` works too) or `UC-NEXT-01`.
+Scenes and use cases live in a project's Product to-do set (Next Platform:
+`--project next`). The model is Scene → Use Case → Issue:
+
+- A **scene** (formerly "User Journey") is an actor-centred view of the system
+  with one angle and one zoom level. Code: `SCN-<Area>-NN`.
+- A **use case** works out part of a scene as a complete software design.
+  Code: `UC-<AREA>-NN`.
+- An **issue** implements (part of) a use case.
+
+An issue belongs to at most one use case, and a use case to at most one scene;
+linking to another parent moves the child. A use case is optional on an issue:
+bugs, chores and triage findings may have none. IDs may be Basecamp IDs or
+codes: `SCN-Next-02` (legacy `UJ-Next-02` works too) or `UC-NEXT-01`, in any
+case and with or without leading zeros. Unnumbered drafts use `xx`; a code that
+several items share returns `ambiguous_code`, so use the Basecamp ID.
 
 ```bash
 # Scenes
@@ -103,8 +114,9 @@ flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
 
 On create, the title gets `--code`, else the code it already starts with, else
 the next free code in `--area`. `--status` is the name of a group in the list;
-on update, `--status none` moves the item out of its group. Use cases are
-completed by hand in Basecamp.
+on update, `--status none` moves the item out of its group. Scenes and use cases
+are completed by hand in Basecamp. A parent keeps a copy of each child's title:
+run `resync` on it after renaming its children.
 
 A project without a Product to-do set returns a `product_not_configured` error.
 A server older than this CLI returns "not supported by this server".
@@ -159,10 +171,10 @@ user text.
 ### Environments
 
 ```bash
-# Production (default) - Eyra dev projects
-flux issues list
+# Production (default) - every project's real backlog, including Flux's own
+flux issues list --project flux
 
-# Test environment - Flux dogfooding
+# Test environment - only for verifying the eyra-flux-test deployment
 flux issues list --env test
 ```
 
