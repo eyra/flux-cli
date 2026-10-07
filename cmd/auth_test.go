@@ -27,6 +27,7 @@ func isolateCommand(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("FLUX_ENV", "")
 	t.Setenv("FLUX_API_KEY", "")
+	t.Setenv("FLUX_BASE_URL", "")
 	for _, name := range []string{"env", "api-key", "project", "json"} {
 		flag := rootCmd.PersistentFlags().Lookup(name)
 		value, changed := flag.Value.String(), flag.Changed
@@ -79,7 +80,7 @@ func TestAuthStatusVerifiedIdentity(t *testing.T) {
 			requests := 0
 			http.DefaultTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				requests++
-				if r.Method != http.MethodGet || r.URL.String() != "https://eyra-flux.fly.dev/api/dev/identity" || r.Header.Get("Authorization") != "Bearer "+credential {
+				if r.Method != http.MethodGet || r.URL.String() != "https://eyra-flux.fly.dev/api/delivery/identity" || r.Header.Get("Authorization") != "Bearer "+credential {
 					t.Errorf("wrong environment, endpoint, or credential selection")
 				}
 				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"basecamp_account_id":"99","basecamp_person_id":"101","display_name":"Alex","access_token":"must-not-leak"}`)), Header: make(http.Header)}, nil
