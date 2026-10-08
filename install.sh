@@ -8,19 +8,37 @@
 # Install from source (requires Go):
 #   git clone https://github.com/eyra/flux-cli && cd flux-cli && ./install.sh
 #
+# Overrides:
+#   INSTALL_DIR   where the binary goes (default: ~/.local/bin)
+#   SKILL_DIR     where the Claude Code skill goes (default: ~/.claude/skills/flux)
+#   FLUX_ARCHIVE  install this local release archive instead of downloading one
+#                 (used by scripts/test-install.sh)
+#
 
 set -e
 
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
+SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/flux}"
 REPO="eyra/flux-cli"
 
+# install_skill <dir>: copy the skill from <dir>/skill/SKILL.md, the layout of
+# both the repo and the release archive (see .goreleaser.yml). <dir>/SKILL.md is
+# accepted as a fallback for a flat archive.
 install_skill() {
-  SKILL_DIR="$HOME/.claude/skills/flux"
-  if [ -f "skill/SKILL.md" ]; then
-    echo "Installing Claude Code skill to $SKILL_DIR..."
-    mkdir -p "$SKILL_DIR"
-    cp skill/SKILL.md "$SKILL_DIR/SKILL.md"
+  SRC=""
+  for f in "$1/skill/SKILL.md" "$1/SKILL.md"; do
+    if [ -f "$f" ]; then
+      SRC="$f"
+      break
+    fi
+  done
+  if [ -z "$SRC" ]; then
+    echo "Warning: no SKILL.md found in $1; skipping the Claude Code skill"
+    return
   fi
+  echo "Installing Claude Code skill to $SKILL_DIR..."
+  mkdir -p "$SKILL_DIR"
+  cp "$SRC" "$SKILL_DIR/SKILL.md"
 }
 
 check_path() {
@@ -38,6 +56,28 @@ check_path() {
 }
 
 install_from_release() {
+  TMP=$(mktemp -d)
+
+  if [ -n "$FLUX_ARCHIVE" ]; then
+    echo "Installing from local archive $FLUX_ARCHIVE..."
+    LATEST="$(basename "$FLUX_ARCHIVE")"
+    tar -xzf "$FLUX_ARCHIVE" -C "$TMP"
+  else
+    download_release
+  fi
+
+  mkdir -p "$INSTALL_DIR"
+  mv "$TMP/flux" "$INSTALL_DIR/flux"
+  chmod +x "$INSTALL_DIR/flux"
+
+  install_skill "$TMP"
+
+  rm -rf "$TMP"
+  echo "Installed $LATEST to $INSTALL_DIR/flux"
+}
+
+# download_release: fetch the latest release archive and extract it into $TMP.
+download_release() {
   echo "Downloading latest Flux CLI release..."
 
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -55,24 +95,8 @@ install_from_release() {
   URL="https://github.com/$REPO/releases/download/$LATEST/$ARCHIVE"
 
   echo "Downloading $LATEST ($OS/$ARCH)..."
-  TMP=$(mktemp -d)
   curl -fsSL "$URL" -o "$TMP/$ARCHIVE"
   tar -xzf "$TMP/$ARCHIVE" -C "$TMP"
-
-  mkdir -p "$INSTALL_DIR"
-  mv "$TMP/flux" "$INSTALL_DIR/flux"
-  chmod +x "$INSTALL_DIR/flux"
-
-  # Install skill if bundled in the archive
-  if [ -f "$TMP/SKILL.md" ]; then
-    SKILL_DIR="$HOME/.claude/skills/flux"
-    echo "Installing Claude Code skill to $SKILL_DIR..."
-    mkdir -p "$SKILL_DIR"
-    cp "$TMP/SKILL.md" "$SKILL_DIR/SKILL.md"
-  fi
-
-  rm -rf "$TMP"
-  echo "Installed $LATEST to $INSTALL_DIR/flux"
 }
 
 install_from_source() {
@@ -88,11 +112,11 @@ install_from_source() {
   mv flux "$INSTALL_DIR/flux"
   echo "Installed to $INSTALL_DIR/flux"
 
-  install_skill
+  install_skill .
 }
 
 # Build from source if in the repo and Go is available; otherwise download a release
-if [ -f "go.mod" ] && command -v go &> /dev/null; then
+if [ -z "$FLUX_ARCHIVE" ] && [ -f "go.mod" ] && command -v go &> /dev/null; then
   install_from_source
 else
   install_from_release
