@@ -20,6 +20,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # goreleaser's before hook runs `go mod tidy`; an untidy go.mod would
+      # dirty the tree and fail the real release below.
+      - name: Check that go mod tidy leaves no diff
+        run: go mod tidy -diff
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
@@ -27,6 +32,16 @@ jobs:
 
       - name: Check archive layout against install.sh
         run: scripts/test-install.sh dist
+
+      # The real release refuses a dirty tree, so fail here with the diff if
+      # the snapshot's hooks changed any tracked file.
+      - name: Check that the snapshot left the tree clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status
+            git diff
+            exit 1
+          fi
 
       - uses: goreleaser/goreleaser-action@v6
         with:

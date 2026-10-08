@@ -1,0 +1,22 @@
+name: Go mod tidy
+
+# goreleaser runs `go mod tidy` as a before hook. If go.mod or go.sum isn't
+# tidy, the hook dirties the tree and the release fails, so catch it here.
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check that go mod tidy leaves no diff
+        run: go mod tidy -diff
