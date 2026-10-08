@@ -38,6 +38,12 @@ install_skill() {
   fi
   echo "Installing Claude Code skill to $SKILL_DIR..."
   mkdir -p "$SKILL_DIR"
+  # Keep a locally edited skill instead of silently overwriting it.
+  if [ -f "$SKILL_DIR/SKILL.md" ] && ! cmp -s "$SRC" "$SKILL_DIR/SKILL.md"; then
+    BACKUP="$SKILL_DIR/SKILL.md.bak-$(date +%Y%m%d-%H%M%S)"
+    cp "$SKILL_DIR/SKILL.md" "$BACKUP"
+    echo "Your existing SKILL.md differs from this release; backed it up to $BACKUP"
+  fi
   cp "$SRC" "$SKILL_DIR/SKILL.md"
 }
 

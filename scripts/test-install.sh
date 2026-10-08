@@ -7,8 +7,9 @@
 # Usage: scripts/test-install.sh [dist-dir]
 #   Build the archives first: goreleaser release --snapshot --clean
 #
-# Runs with a temporary HOME, INSTALL_DIR and SKILL_DIR, from a directory
-# without go.mod, so it never touches the real installation.
+# Runs with a temporary HOME, and INSTALL_DIR and SKILL_DIR unset so they
+# default into it, from a directory without go.mod, so it never touches the
+# real installation.
 
 set -euo pipefail
 
@@ -42,17 +43,42 @@ SANDBOX="$(mktemp -d)"
 trap 'rm -rf "$SANDBOX"' EXIT
 mkdir -p "$SANDBOX/home" "$SANDBOX/work"
 
-(
-  cd "$SANDBOX/work"
-  [ ! -f go.mod ] || fail "work directory has a go.mod"
-  HOME="$SANDBOX/home" FLUX_ARCHIVE="$ARCHIVE" bash "$ROOT/install.sh"
-)
+# run_install: install $ARCHIVE through install.sh inside the sandbox. A
+# developer's exported INSTALL_DIR or SKILL_DIR must never leak in.
+run_install() {
+  (
+    cd "$SANDBOX/work"
+    [ ! -f go.mod ] || fail "work directory has a go.mod"
+    env -u INSTALL_DIR -u SKILL_DIR HOME="$SANDBOX/home" FLUX_ARCHIVE="$ARCHIVE" \
+      bash "$ROOT/install.sh"
+  )
+}
+
+run_install
 
 BIN="$SANDBOX/home/.local/bin/flux"
-SKILL="$SANDBOX/home/.claude/skills/flux/SKILL.md"
+SKILL_DIR="$SANDBOX/home/.claude/skills/flux"
+SKILL="$SKILL_DIR/SKILL.md"
 [ -x "$BIN" ] || fail "install.sh did not install $BIN"
 [ -f "$SKILL" ] || fail "install.sh did not install $SKILL"
 cmp -s "$SKILL" "$ROOT/skill/SKILL.md" || fail "installed SKILL.md differs from skill/SKILL.md"
 "$BIN" --version >/dev/null 2>&1 || "$BIN" --help >/dev/null || fail "installed flux does not run"
 
 echo "ok: install.sh installed $(basename "$ARCHIVE") (binary and skill) under a temporary HOME"
+
+# Reinstalling over an unchanged skill makes no backup.
+run_install >/dev/null
+BACKUPS=("$SKILL_DIR"/SKILL.md.bak-*)
+[ ${#BACKUPS[@]} -eq 0 ] || fail "reinstall over an unchanged skill made a backup"
+echo "ok: reinstall over an unchanged skill makes no backup"
+
+# Reinstalling over a locally edited skill backs it up first.
+echo "local edit" >>"$SKILL"
+cp "$SKILL" "$SANDBOX/edited.md"
+OUT="$(run_install)"
+BACKUPS=("$SKILL_DIR"/SKILL.md.bak-*)
+[ ${#BACKUPS[@]} -eq 1 ] || fail "expected one backup of the edited skill, found ${#BACKUPS[@]}"
+cmp -s "${BACKUPS[0]}" "$SANDBOX/edited.md" || fail "backup does not hold the edited skill"
+cmp -s "$SKILL" "$ROOT/skill/SKILL.md" || fail "edited skill was not replaced by the release skill"
+grep -qF "${BACKUPS[0]}" <<<"$OUT" || fail "install.sh did not print the backup path"
+echo "ok: reinstall over an edited skill backs it up to $(basename "${BACKUPS[0]}")"
