@@ -81,7 +81,7 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 					requests := 0
 					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						requests++
-						if r.Method != operation.method || r.URL.Path != "/api/dev"+operation.path || r.Header.Get("Authorization") != "Bearer fixture-key" {
+						if r.Method != operation.method || r.URL.Path != "/api/delivery"+operation.path || r.Header.Get("Authorization") != "Bearer fixture-key" {
 							t.Errorf("unexpected request: %s %s, authorization %q", r.Method, r.URL, r.Header.Get("Authorization"))
 						}
 						var body map[string]interface{}
@@ -125,8 +125,8 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 func TestUnsupportedCommandsRejectAIModel(t *testing.T) {
 	for _, command := range []*cobra.Command{
 		issuesListCmd, issuesGetCmd, issuesDeleteCmd, issuesLinkCmd, issuesAssignCmd,
-		epicsListCmd, epicsGetCmd, epicsIssuesCmd, epicsLinkCmd, epicsResyncCmd,
-		milestonesListCmd, milestonesGetCmd, milestonesEpicsCmd, milestonesIssuesCmd, milestonesResyncCmd,
+		epicsListCmd, epicsGetCmd, epicsIssuesCmd, epicsResyncCmd,
+		milestonesListCmd, milestonesGetCmd, milestonesIssuesCmd, milestonesResyncCmd,
 		commentsDeleteCmd, authStatusCmd, personasListCmd,
 	} {
 		t.Run(command.CommandPath(), func(t *testing.T) {

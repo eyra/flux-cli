@@ -16,7 +16,6 @@ var (
 	epicDescriptionFlag string
 	epicAssigneesFlag   string
 	epicBranchFlag      string
-	epicUnlinkFlag      bool
 	epicContentFlag     string
 	epicPersonaFlag     string
 )
@@ -230,42 +229,10 @@ var epicsIssuesCmd = &cobra.Command{
 	},
 }
 
-var epicsLinkCmd = &cobra.Command{
-	Use:   "link [id]",
-	Short: "Link an epic to a milestone",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if epicMilestoneFlag == "" {
-			return fmt.Errorf("--milestone is required")
-		}
-
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
-
-		action := "link"
-		if epicUnlinkFlag {
-			action = "unlink"
-		}
-
-		req := api.LinkEpicRequest{
-			MilestoneID: epicMilestoneFlag,
-			Action:      action,
-			Project:     getProject(),
-		}
-
-		if err := client.LinkEpic(args[0], req); err != nil {
-			return err
-		}
-
-		if jsonFlag {
-			printOK("id", args[0])
-		} else if epicUnlinkFlag {
-			fmt.Printf("Unlinked epic %s from milestone %s\n", args[0], epicMilestoneFlag)
-		} else {
-			fmt.Printf("Linked epic %s to milestone %s\n", args[0], epicMilestoneFlag)
-		}
-		return nil
-	},
-}
+// epicsLinkCmd is kept, hidden, only to point old scripts to issues link: no
+// Flux server links an epic to a milestone.
+var epicsLinkCmd = removedCommand("link [id]",
+	"`flux epics link` was removed: Flux does not link epics to milestones. Link issues instead: flux issues link <issue> --target-type epic|milestone --target-id <id>")
 
 var epicsCommentCmd = &cobra.Command{
 	Use:   "comment [id]",
@@ -350,10 +317,6 @@ func init() {
 
 	// Issues flags
 	epicsIssuesCmd.Flags().BoolVar(&epicCompletedFlag, "completed", false, "Include completed issues")
-
-	// Link flags
-	epicsLinkCmd.Flags().StringVar(&epicMilestoneFlag, "milestone", "", "Milestone ID (required)")
-	epicsLinkCmd.Flags().BoolVar(&epicUnlinkFlag, "unlink", false, "Unlink instead of link")
 
 	// Comment flags
 	epicsCommentCmd.Flags().StringVar(&epicContentFlag, "content", "", "Comment content (required)")

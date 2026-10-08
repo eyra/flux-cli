@@ -29,7 +29,8 @@ flux issues list --json
 flux issues get 12345
 ```
 
-Use `--project flux` or `--project next` to scope the lookup. The default is
+Use `--project <key>` (for example `flux`, `next` or `feldspar`; `flux projects
+list` shows all) to scope the lookup. The default is
 `next` on production and `flux` on test. An issue outside the selected project
 returns an error.
 
@@ -62,10 +63,96 @@ string person ID as `author_id`:
 {"id":"789","author":"Alex","author_id":"456","date":"2026-10-06","content":"Comment text"}
 ```
 
-When the creator ID is unavailable, `author_id` is omitted. Names are not unique;
+When the creator ID is unavailable, `author_id` is omitted or `null`, exactly as
+the server sends it: `--json` output repeats the server's JSON and keeps every
+field, including `ref`, `epic`, `milestone`, `use_case` and `url`. Names are not unique;
 compare `author_id` with verified `basecamp_person_id` to identify the signed-in
 person's comments, within the same Basecamp account. Do not derive identity from
 the name or persona attribution.
+
+### Scenes and use cases
+
+Scenes and use cases live in a project's Product to-do set (Next Platform:
+`--project next`). The model is Scene → Use Case → Issue:
+
+- A **scene** (formerly "User Journey") is an actor-centred view of the system
+  with one angle and one zoom level. Code: `SC-<Area>-NN`.
+- A **use case** works out part of a scene as a complete software design.
+  Code: `UC-<AREA>-NN`.
+- An **issue** implements (part of) a use case.
+
+An issue belongs to at most one use case, and a use case to at most one scene;
+linking to another parent moves the child. A use case is optional on an issue:
+bugs, chores and triage findings may have none. IDs may be Basecamp IDs or
+codes: `SC-Next-02` (`SCN-Next-02` and legacy `UJ-Next-02` work too) or
+`UC-NEXT-01`, in any case and with or without leading zeros. Unnumbered drafts
+use `xx`; a code that several items share fails with `ambiguous_code` and lists
+the matching IDs, so use one of those Basecamp IDs.
+
+```bash
+# Scenes
+flux scenes list [--completed]
+flux scenes get SC-Next-02 [--no-thread]
+flux scenes create --title "Donate data" --area Next [--code SC-Next-04] [--status Refine] [--description ...]
+flux scenes update SC-Next-02 [--title ...] [--code ...] [--status none] [--description ...]
+flux scenes comment SC-Next-02 --content "..."
+flux scenes next-code --area Next     # print the next free code, e.g. SC-Next-04
+flux scenes usecases SC-Next-02      # use cases linked to the scene
+flux scenes resync SC-Next-02        # refresh the linked use case titles
+
+# Use cases
+flux usecases list [--scene SC-Next-02] [--completed]
+flux usecases get UC-NEXT-01 [--no-thread]
+flux usecases create --title "Upload data" --area NEXT [--scene SC-Next-02]
+flux usecases update UC-NEXT-01 [--title ...] [--code ...] [--status ...] [--description ...]
+flux usecases comment UC-NEXT-01 --content "..."
+flux usecases next-code --area NEXT   # print the next free code, e.g. UC-NEXT-03
+flux usecases link UC-NEXT-01 --target-type scene --target-id SC-Next-02
+flux usecases unlink UC-NEXT-01 --target-type scene --target-id SC-Next-02
+flux usecases issues UC-NEXT-01       # issues linked to the use case
+flux usecases resync UC-NEXT-01       # refresh the linked issue titles
+
+# Issues
+flux issues create --title "..." --app web --usecase UC-NEXT-01 [--epic ...] [--milestone ...] [--context Dev]
+flux issues update 12345 --context UC-NEXT-02   # sets the title's [UC-NEXT-02] prefix
+flux issues list --context dev                  # issues with that title prefix
+flux issues update 12345 --usecase UC-NEXT-02   # moves it; --usecase "" removes the link
+flux issues link 12345 --target-type usecase --target-id UC-NEXT-01 [--unlink]
+```
+
+`issues create` and `issues update` link the issue through `--epic`,
+`--milestone` and `--usecase` after writing it, with the same link endpoint as
+`issues link`. With `--usecase`, the command first reads the use case, so a
+server without Scenes, a project without Product or an unknown use case fails
+before anything is written. If a link still fails after the issue was created,
+the command exits with "issue <id> was created, but could not link …"; link it
+with `issues link` rather than creating it again.
+
+An issue's **context** is the bracketed prefix of its title: `Dev` in
+`[Dev] Fix login`, `UC-NEXT-01` in `[UC-NEXT-01] Show the results`. It used to
+be called the program. `--context` on `issues create` and `issues update` sets
+that prefix, replacing any existing one, `issues list --context` filters on it,
+and `issues get` prints it as `Context:`. `--program` still works as a hidden,
+deprecated alias of `--context`.
+
+On create, the title gets `--code`, else the code it already starts with, else
+the next free code in `--area`. `--status` is the name of a group in the list;
+on update, `--status none` moves the item out of its group. Scenes and use cases
+are completed by hand in Basecamp. A parent keeps a copy of each child's title:
+run `resync` on it after renaming its children.
+
+A project without a Product to-do set returns a `product_not_configured` error.
+A server older than this CLI returns "not supported by this server".
+
+### API namespaces
+
+The CLI calls `/api/delivery` for issues, milestones and epics, and
+`/api/product` for scenes and use cases. Against an older server without
+`/api/delivery` it falls back to `/api/dev` automatically.
+
+Flux does not link epics to milestones. The old `epics link` and
+`milestones epics` commands are removed; link issues with `flux issues link`
+and list a milestone's issues with `flux milestones issues`.
 
 ### List personas
 
@@ -82,7 +169,8 @@ flux issues comment 12345 --content "Investigated the failure." --ai-model "open
 flux comments update 67890 --content "Updated findings." --ai-model "anthropic/claude-sonnet-4" --json
 ```
 
-Supported commands are `issues`, `epics`, and `milestones` **create**, **update**
+Supported commands are `issues`, `epics`, `milestones`, `scenes`, and `usecases`
+**create**, **update**
 (for supplied descriptions), and **comment**; **comments update**; and
 **issues advance** (for its optional `--comment`, not the automatic stage comment).
 The flag is not global and is unavailable on reads, deletes, links, assignments,
@@ -110,10 +198,10 @@ user text.
 ### Environments
 
 ```bash
-# Production (default) - Eyra dev projects
-flux issues list
+# Production (default) - every project's real backlog, including Flux's own
+flux issues list --project flux
 
-# Test environment - Flux dogfooding
+# Test environment - only for verifying the eyra-flux-test deployment
 flux issues list --env test
 ```
 
@@ -134,4 +222,7 @@ go build -o flux .
 
 # Run
 ./flux issues list --env test
+
+# Run against a local server
+FLUX_BASE_URL=http://localhost:4040 ./flux scenes list --project next --api-key <key>
 ```

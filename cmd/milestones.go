@@ -224,40 +224,10 @@ var milestonesUpdateCmd = &cobra.Command{
 	},
 }
 
-var milestonesEpicsCmd = &cobra.Command{
-	Use:   "epics [id]",
-	Short: "List epics linked to a milestone",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
-
-		epics, err := client.ListMilestoneEpics(args[0], milestoneCompletedFlag, getProject())
-		if err != nil {
-			return err
-		}
-
-		if jsonFlag {
-			data, _ := json.MarshalIndent(epics, "", "  ")
-			fmt.Println(string(data))
-			return nil
-		}
-
-		if len(epics) == 0 {
-			fmt.Println("No epics linked to this milestone.")
-			return nil
-		}
-
-		for _, epic := range epics {
-			completedStr := ""
-			if epic.Completed {
-				completedStr = " [done]"
-			}
-			fmt.Printf("%s  %s%s\n", epic.ID, epic.Title, completedStr)
-		}
-
-		return nil
-	},
-}
+// milestonesEpicsCmd is kept, hidden, only to point old scripts to issues
+// link: no Flux server links an epic to a milestone.
+var milestonesEpicsCmd = removedCommand("epics [id]",
+	"`flux milestones epics` was removed: Flux does not link epics to milestones. List a milestone's issues with `flux milestones issues <id>`, and link issues with `flux issues link`")
 
 var milestonesIssuesCmd = &cobra.Command{
 	Use:   "issues [id]",
@@ -384,9 +354,6 @@ func init() {
 	milestonesUpdateCmd.Flags().IntVar(&milestoneGithubMilestoneFlag, "github-milestone", 0, "GitHub milestone number (0 to remove)")
 	milestonesUpdateCmd.Flags().StringVar(&milestoneAppFlag, "app", "", "App (web, ios, android)")
 	milestonesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
-
-	// Epics flags
-	milestonesEpicsCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed epics")
 
 	// Issues flags
 	milestonesIssuesCmd.Flags().BoolVar(&milestoneCompletedFlag, "completed", false, "Include completed issues")

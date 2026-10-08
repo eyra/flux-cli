@@ -18,31 +18,31 @@ type ProjectsResponse struct {
 	Projects []Project `json:"projects"`
 }
 
-// CreateIssueRequest is the request body for creating an issue
+// CreateIssueRequest is the request body for creating an issue. Links to an
+// epic, milestone or use case go through LinkIssue afterwards: the server
+// ignores them here.
 type CreateIssueRequest struct {
 	Title       string  `json:"title"`
 	Description string  `json:"description,omitempty"`
 	Stage       string  `json:"stage,omitempty"`
-	Program     string  `json:"program,omitempty"`
+	Context     string  `json:"context,omitempty"`
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Epic        string  `json:"epic,omitempty"`
-	Milestone   string  `json:"milestone,omitempty"`
 	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
 }
 
-// UpdateIssueRequest is the request body for updating an issue
+// UpdateIssueRequest is the request body for updating an issue. Links go
+// through LinkIssue, as for CreateIssueRequest.
 type UpdateIssueRequest struct {
 	Title       string  `json:"title,omitempty"`
+	Context     string  `json:"context,omitempty"`
 	Description string  `json:"description,omitempty"`
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Epic        string  `json:"epic,omitempty"`
-	Milestone   string  `json:"milestone,omitempty"`
 	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
@@ -124,13 +124,6 @@ type UpdateEpicRequest struct {
 	Branch      string  `json:"branch,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
-}
-
-// LinkEpicRequest is the request body for linking an epic to a milestone
-type LinkEpicRequest struct {
-	MilestoneID string `json:"milestone_id"`
-	Action      string `json:"action,omitempty"` // "link" or "unlink"
-	Project     string `json:"project,omitempty"`
 }
 
 // Milestone represents a milestone in release planning
@@ -263,7 +256,7 @@ type AppSignalDashboard struct {
 // ListIssuesOptions contains options for listing issues
 type ListIssuesOptions struct {
 	Stage     string
-	Program   string
+	Context   string
 	App       string
 	Completed bool
 	Project   string

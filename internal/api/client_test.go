@@ -6,6 +6,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -16,9 +20,9 @@ func TestProtectedReads(t *testing.T) {
 			return
 		}
 		switch r.URL.Path {
-		case "/api/dev/issues/42":
+		case "/api/delivery/issues/42":
 			io.WriteString(w, `{"id":"42","title":"Personal issue"}`)
-		case "/api/dev/personas":
+		case "/api/delivery/personas":
 			io.WriteString(w, `{"personas":[{"name":"clara"}]}`)
 		default:
 			http.NotFound(w, r)
@@ -57,7 +61,7 @@ func TestProtectedReads(t *testing.T) {
 
 func TestGetIssueProjectAndAuthorIDs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/dev/issues/42" || r.URL.Query().Get("project") != "other project" {
+		if r.URL.Path != "/api/delivery/issues/42" || r.URL.Query().Get("project") != "other project" {
 			http.NotFound(w, r)
 			return
 		}
@@ -92,16 +96,19 @@ func TestGetIssueProjectAndAuthorIDs(t *testing.T) {
 			t.Fatalf("lost distinct author identity: %s", data)
 		}
 	}
-	for _, comment := range output.Thread[2:] {
-		if _, exists := comment["author_id"]; exists {
-			t.Fatalf("invented missing author identity: %s", data)
-		}
+	// JSON output repeats the server's JSON: a null author stays null and a
+	// missing one stays missing.
+	if id, exists := output.Thread[2]["author_id"]; !exists || id != nil {
+		t.Fatalf("changed null author identity: %s", data)
+	}
+	if _, exists := output.Thread[3]["author_id"]; exists {
+		t.Fatalf("invented missing author identity: %s", data)
 	}
 }
 
 func TestGetIdentity(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/dev/identity" {
+		if r.URL.Path != "/api/delivery/identity" {
 			http.NotFound(w, r)
 			return
 		}
@@ -132,5 +139,91 @@ func TestGetIdentity(t *testing.T) {
 	identity, err = NewClient(server.URL, "incomplete").GetIdentity()
 	if identity != nil || err == nil {
 		t.Fatalf("accepted incomplete identity: %+v, %v", identity, err)
+	}
+}
+
+func TestDeliveryFallsBackToLegacyPrefix(t *testing.T) {
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.Method+" "+r.URL.Path)
+		switch r.URL.Path {
+		case "/api/dev/issues/42":
+			io.WriteString(w, `{"id":"42","title":"Old server"}`)
+		case "/api/dev/issues/42/link":
+			body, _ := io.ReadAll(r.Body)
+			if !strings.Contains(string(body), `"target_type":"epic"`) {
+				t.Errorf("retried link lost its body: %s", body)
+			}
+			io.WriteString(w, `{"action":"linked"}`)
+		case "/api/dev/issues/404":
+			w.WriteHeader(http.StatusNotFound)
+			io.WriteString(w, `{"error":"Issue not found"}`)
+		default:
+			// An older Phoenix server has no /api/delivery routes.
+			w.WriteHeader(http.StatusNotFound)
+			io.WriteString(w, `{"errors":{"detail":"Not Found"}}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewClient(server.URL, "key")
+	issue, err := client.GetIssue("42", "")
+	if err != nil || issue.Title != "Old server" {
+		t.Fatalf("GetIssue = %+v, %v", issue, err)
+	}
+	if _, err := client.LinkIssue("42", LinkRequest{TargetType: "epic", TargetID: "7"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.GetIssue("404", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected not found, got %v", err)
+	}
+	want := []string{
+		"GET /api/delivery/issues/42", "GET /api/dev/issues/42",
+		"POST /api/dev/issues/42/link",
+		"GET /api/dev/issues/404",
+	}
+	if !reflect.DeepEqual(paths, want) {
+		t.Fatalf("requests = %v; want %v", paths, want)
+	}
+}
+
+func TestDeliveryNotFoundDoesNotFallBack(t *testing.T) {
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, `{"error":"Issue not found"}`)
+	}))
+	t.Cleanup(server.Close)
+
+	_, err := NewClient(server.URL, "key").GetIssue("42", "")
+	if !errors.Is(err, ErrNotFound) || !strings.Contains(err.Error(), "Issue not found") {
+		t.Fatalf("expected issue not found, got %v", err)
+	}
+	if !reflect.DeepEqual(paths, []string{"/api/delivery/issues/42"}) {
+		t.Fatalf("requests = %v; want only /api/delivery", paths)
+	}
+}
+
+func TestUploadImageFallsBackToLegacyPrefix(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "image.png")
+	if err := os.WriteFile(file, []byte("png"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/dev/images" {
+			http.NotFound(w, r)
+			return
+		}
+		if err := r.ParseMultipartForm(1 << 20); err != nil || r.MultipartForm.File["file"] == nil {
+			t.Errorf("retried upload lost its form: %v", err)
+		}
+		io.WriteString(w, `{"sgid":"s","html":"h"}`)
+	}))
+	t.Cleanup(server.Close)
+
+	result, err := NewClient(server.URL, "key").UploadImage(file, "", "")
+	if err != nil || result.SGID != "s" {
+		t.Fatalf("UploadImage = %+v, %v", result, err)
 	}
 }

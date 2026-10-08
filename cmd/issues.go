@@ -15,12 +15,13 @@ var (
 	// Create flags
 	issueTitleFlag       string
 	issueDescriptionFlag string
-	issueProgramFlag     string
+	issueContextFlag     string
 	issueSizeFlag        string
 	issuePriorityFlag    int
 	issueAppFlag         string
 	issueEpicFlag        string
 	issueMilestoneFlag   string
+	issueUseCaseFlag     string
 	issuePersonaFlag     string
 	// Advance flags
 	issueTargetStageFlag    string
@@ -49,6 +50,7 @@ var issuesListCmd = &cobra.Command{
 
 		issues, err := client.ListIssues(api.ListIssuesOptions{
 			Stage:     stageFlag,
+			Context:   issueContextFlag,
 			App:       issueAppFlag,
 			Completed: issueCompletedFlag,
 			Project:   getProject(),
@@ -109,6 +111,9 @@ var issuesGetCmd = &cobra.Command{
 		// Human-readable output
 		fmt.Printf("# %s\n\n", issue.Title)
 		fmt.Printf("ID: %s\n", issue.ID)
+		if issue.Ref != "" {
+			fmt.Printf("Ref: %s\n", issue.Ref)
+		}
 		fmt.Printf("Stage: %s", issue.Stage)
 		if issue.SubStage != "" {
 			fmt.Printf(" > %s", issue.SubStage)
@@ -118,14 +123,26 @@ var issuesGetCmd = &cobra.Command{
 			fmt.Printf("Completed: yes\n")
 		}
 
-		if issue.Program != "" {
-			fmt.Printf("Program: %s\n", issue.Program)
+		if context := issue.DisplayContext(); context != "" {
+			fmt.Printf("Context: %s\n", context)
 		}
 		if issue.Size != "" {
 			fmt.Printf("Size: %s\n", issue.Size)
 		}
 		if issue.App != "" {
 			fmt.Printf("App: %s\n", issue.App)
+		}
+		if issue.Epic != "" {
+			fmt.Printf("Epic: %s\n", issue.Epic)
+		}
+		if issue.Milestone != "" {
+			fmt.Printf("Milestone: %s\n", issue.Milestone)
+		}
+		if issue.UseCase != "" {
+			fmt.Printf("Use case: %s\n", issue.UseCase)
+		}
+		if issue.URL != "" {
+			fmt.Printf("URL: %s\n", issue.URL)
 		}
 		if len(issue.Assignees) > 0 {
 			names := make([]string, len(issue.Assignees))
@@ -160,17 +177,18 @@ var issuesCreateCmd = &cobra.Command{
 		}
 
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		if err := checkUseCaseTarget(cmd, client); err != nil {
+			return fmt.Errorf("no issue was created: %w", err)
+		}
 
 		req := api.CreateIssueRequest{
 			Title:       issueTitleFlag,
 			Description: issueDescriptionFlag,
 			Stage:       stageFlag,
-			Program:     issueProgramFlag,
+			Context:     issueContextFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Epic:        issueEpicFlag,
-			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
@@ -181,13 +199,11 @@ var issuesCreateCmd = &cobra.Command{
 			return err
 		}
 
-		if jsonFlag {
-			data, _ := json.MarshalIndent(issue, "", "  ")
-			fmt.Println(string(data))
-			return nil
+		links, linkErr := linkIssueParents(cmd, client, issue.ID, false)
+		printIssueWrite("Created", issue, links)
+		if linkErr != nil {
+			return fmt.Errorf("issue %s was created, but %w", issue.ID, linkErr)
 		}
-
-		fmt.Printf("Created issue %s: %s\n", issue.ID, issue.Title)
 		return nil
 	},
 }
@@ -198,15 +214,17 @@ var issuesUpdateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		if err := checkUseCaseTarget(cmd, client); err != nil {
+			return fmt.Errorf("issue %s was not updated: %w", args[0], err)
+		}
 
 		req := api.UpdateIssueRequest{
 			Title:       issueTitleFlag,
+			Context:     issueContextFlag,
 			Description: issueDescriptionFlag,
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Epic:        issueEpicFlag,
-			Milestone:   issueMilestoneFlag,
 			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
@@ -217,13 +235,11 @@ var issuesUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		if jsonFlag {
-			data, _ := json.MarshalIndent(issue, "", "  ")
-			fmt.Println(string(data))
-			return nil
+		links, linkErr := linkIssueParents(cmd, client, args[0], true)
+		printIssueWrite("Updated", issue, links)
+		if linkErr != nil {
+			return fmt.Errorf("issue %s was updated, but %w", args[0], linkErr)
 		}
-
-		fmt.Printf("Updated issue %s: %s\n", issue.ID, issue.Title)
 		return nil
 	},
 }
@@ -326,7 +342,7 @@ var issuesAdvanceCmd = &cobra.Command{
 
 var issuesLinkCmd = &cobra.Command{
 	Use:   "link [id]",
-	Short: "Link an issue to an epic or milestone",
+	Short: "Link an issue to an epic, milestone or use case",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if issueTargetTypeFlag == "" || issueTargetIDFlag == "" {
@@ -347,12 +363,13 @@ var issuesLinkCmd = &cobra.Command{
 			Project:    getProject(),
 		}
 
-		if err := client.LinkIssue(args[0], req); err != nil {
+		result, err := client.LinkIssue(args[0], req)
+		if err != nil {
 			return err
 		}
 
 		if jsonFlag {
-			printOK("id", args[0])
+			printServerOK(result, "id", args[0])
 		} else if issueUnlinkFlag {
 			fmt.Printf("Unlinked issue %s from %s %s\n", args[0], issueTargetTypeFlag, issueTargetIDFlag)
 		} else {
@@ -387,6 +404,148 @@ var issuesAssignCmd = &cobra.Command{
 	},
 }
 
+// issueParents are the parents that issues create and update link to through
+// a flag. The server ignores them in the issue body, so the CLI links each one
+// through the issue's link endpoint after the write.
+var issueParents = []struct{ flag, targetType, label string }{
+	{"epic", "epic", "epic"},
+	{"milestone", "milestone", "milestone"},
+	{"usecase", "use_case", "use case"},
+}
+
+// issueLink is a link that issues create or update made or removed.
+type issueLink struct {
+	targetType string
+	label      string
+	id         string
+	unlinked   bool
+}
+
+// linkIssueParents links issue id to the parents given by flags. With
+// allowUnlink, an empty flag value removes the issue's current link of that
+// type. It returns the links it made before any error.
+func linkIssueParents(cmd *cobra.Command, client *api.Client, id string, allowUnlink bool) ([]issueLink, error) {
+	var links []issueLink
+	var current *api.Issue
+	for _, parent := range issueParents {
+		if !cmd.Flags().Changed(parent.flag) {
+			continue
+		}
+		target, _ := cmd.Flags().GetString(parent.flag)
+		action := "link"
+		if target == "" {
+			if !allowUnlink {
+				continue
+			}
+			if current == nil {
+				issue, err := client.GetIssue(id, getProject())
+				if err != nil {
+					return links, fmt.Errorf("could not read its links: %w", err)
+				}
+				current = issue
+			}
+			if target = currentParent(current, parent.targetType); target == "" {
+				continue
+			}
+			action = "unlink"
+		}
+
+		response, err := client.LinkIssue(id, api.LinkRequest{
+			TargetType: parent.targetType,
+			TargetID:   target,
+			Action:     action,
+			Project:    getProject(),
+		})
+		if err != nil {
+			return links, fmt.Errorf("could not %s %s %s: %w", action, parent.label, target, err)
+		}
+		links = append(links, issueLink{
+			targetType: parent.targetType,
+			label:      parent.label,
+			id:         linkedParentID(response, parent.targetType, target),
+			unlinked:   action == "unlink",
+		})
+	}
+	return links, nil
+}
+
+// checkUseCaseTarget reads the use case that --usecase names, before the
+// issue is written. A server without Scenes, a project without Product or an
+// unknown use case then fails before anything changes, instead of leaving an
+// issue behind without its link.
+func checkUseCaseTarget(cmd *cobra.Command, client *api.Client) error {
+	if !cmd.Flags().Changed("usecase") {
+		return nil
+	}
+	target, _ := cmd.Flags().GetString("usecase")
+	if target == "" {
+		return nil
+	}
+	if _, err := client.GetProductItem(api.KindUseCase, target, getProject(), false); err != nil {
+		return fmt.Errorf("cannot link use case %s: %w", target, err)
+	}
+	return nil
+}
+
+func currentParent(issue *api.Issue, targetType string) string {
+	switch targetType {
+	case "epic":
+		return string(issue.Epic)
+	case "milestone":
+		return string(issue.Milestone)
+	default:
+		return string(issue.UseCase)
+	}
+}
+
+// linkedParentID returns the parent ID from a link response (a use case code
+// resolves to its ID there), or fallback.
+func linkedParentID(response json.RawMessage, targetType, fallback string) string {
+	var fields map[string]interface{}
+	json.Unmarshal(response, &fields) //nolint:errcheck
+	switch id := fields[targetType+"_id"].(type) {
+	case string:
+		if id != "" {
+			return id
+		}
+	case float64:
+		return fmt.Sprintf("%.0f", id)
+	}
+	return fallback
+}
+
+// printIssueWrite prints a created or updated issue with the links made.
+// JSON output is the server's issue with the link fields set.
+func printIssueWrite(verb string, issue *api.Issue, links []issueLink) {
+	if jsonFlag {
+		data, _ := json.Marshal(issue)
+		var fields map[string]interface{}
+		decoder := json.NewDecoder(strings.NewReader(string(data)))
+		decoder.UseNumber()
+		if err := decoder.Decode(&fields); err != nil || fields == nil {
+			fields = map[string]interface{}{}
+		}
+		for _, link := range links {
+			if link.unlinked {
+				fields[link.targetType] = nil
+			} else {
+				fields[link.targetType] = link.id
+			}
+		}
+		printJSON(fields)
+		return
+	}
+
+	fmt.Printf("%s issue %s: %s\n", verb, issue.ID, issue.Title)
+	for _, link := range links {
+		if link.unlinked {
+			fmt.Printf("Unlinked from %s %s\n", link.label, link.id)
+		} else {
+			fmt.Printf("Linked to %s %s\n", link.label, link.id)
+		}
+	}
+}
+
 func init() {
 	rootCmd.AddCommand(issuesCmd)
 	issuesCmd.AddCommand(issuesListCmd)
@@ -402,28 +561,32 @@ func init() {
 	issuesListCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Filter by stage (specification, design, development, testing)")
 	issuesListCmd.Flags().BoolVar(&issueCompletedFlag, "completed", false, "List only completed issues")
 	issuesListCmd.Flags().StringVar(&issueAppFlag, "app", "", "Filter by app (web, ios, android)")
+	addContextFlags(issuesListCmd, "Filter by context, the bracketed title prefix (e.g. dev, UC-NEXT-01)")
 
 	// Create flags
 	issuesCreateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "Issue title (required)")
 	issuesCreateCmd.Flags().StringVar(&issueDescriptionFlag, "description", "", "Issue description")
 	issuesCreateCmd.Flags().StringVarP(&stageFlag, "stage", "s", "", "Target stage (specification, design, development, testing)")
-	issuesCreateCmd.Flags().StringVar(&issueProgramFlag, "program", "", "Program (basecamp, github, make, mcp, dev, devops)")
+	addContextFlags(issuesCreateCmd, "Context, set as the bracketed title prefix (e.g. Dev, UC-NEXT-01)")
 	issuesCreateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesCreateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
 	issuesCreateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesCreateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to")
+	issuesCreateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to, e.g. UC-NEXT-01")
 	issuesCreateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
 	issuesCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
 	// Update flags
 	issuesUpdateCmd.Flags().StringVar(&issueTitleFlag, "title", "", "New title")
+	addContextFlags(issuesUpdateCmd, "Context, replaces the bracketed title prefix (e.g. Dev, UC-NEXT-01)")
 	issuesUpdateCmd.Flags().StringVar(&issueDescriptionFlag, "description", "", "New description")
 	issuesUpdateCmd.Flags().StringVar(&issueSizeFlag, "size", "", "Size estimate (S, M, L, XL)")
 	issuesUpdateCmd.Flags().IntVar(&issuePriorityFlag, "priority", 0, "Priority 1-4 for tech debt (1 = highest)")
 	issuesUpdateCmd.Flags().StringVar(&issueAppFlag, "app", "", "App (web, ios, android)")
 	issuesUpdateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to (empty to remove)")
+	issuesUpdateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
 	issuesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 
@@ -440,12 +603,20 @@ func init() {
 	issuesAdvanceCmd.Flags().String("ai-model", "", "Caller-declared model for the optional comment footer")
 
 	// Link flags
-	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic or milestone (required)")
-	issuesLinkCmd.Flags().StringVar(&issueTargetIDFlag, "target-id", "", "Target ID (required)")
+	issuesLinkCmd.Flags().StringVar(&issueTargetTypeFlag, "target-type", "", "Target type: epic, milestone or usecase (required)")
+	issuesLinkCmd.Flags().StringVar(&issueTargetIDFlag, "target-id", "", "Target ID or, for a use case, its code (required)")
 	issuesLinkCmd.Flags().BoolVar(&issueUnlinkFlag, "unlink", false, "Unlink instead of link")
 
 	// Assign flags
 	issuesAssignCmd.Flags().StringVar(&issueAssigneeIDsFlag, "assignees", "", "Comma-separated person IDs (required)")
 
 	issuesCmd.AddCommand(issuesAssignCmd)
+}
+
+// addContextFlags adds --context, and --program as its hidden, deprecated
+// alias: "program" was the old name of an issue's context.
+func addContextFlags(cmd *cobra.Command, usage string) {
+	cmd.Flags().StringVar(&issueContextFlag, "context", "", usage)
+	cmd.Flags().StringVar(&issueContextFlag, "program", "", usage)
+	cmd.Flags().MarkDeprecated("program", "use --context instead")
 }
