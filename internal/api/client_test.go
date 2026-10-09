@@ -22,8 +22,6 @@ func TestProtectedReads(t *testing.T) {
 		switch r.URL.Path {
 		case "/api/delivery/issues/42":
 			io.WriteString(w, `{"id":"42","title":"Personal issue"}`)
-		case "/api/delivery/personas":
-			io.WriteString(w, `{"personas":[{"name":"clara"}]}`)
 		default:
 			http.NotFound(w, r)
 		}
@@ -39,20 +37,6 @@ func TestProtectedReads(t *testing.T) {
 			t.Fatalf("unexpected issue: %+v", issue)
 		}
 		_, err = NewClient(server.URL, "").GetIssue("42", "flux")
-		if !errors.Is(err, ErrUnauthorized) {
-			t.Fatalf("expected authentication error, got %v", err)
-		}
-	})
-
-	t.Run("personas", func(t *testing.T) {
-		personas, err := NewClient(server.URL, "personal-token").ListPersonas(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(personas) != 1 || personas[0].Name != "clara" {
-			t.Fatalf("unexpected personas: %+v", personas)
-		}
-		_, err = NewClient(server.URL, "").ListPersonas(nil)
 		if !errors.Is(err, ErrUnauthorized) {
 			t.Fatalf("expected authentication error, got %v", err)
 		}

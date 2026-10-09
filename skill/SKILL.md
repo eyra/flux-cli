@@ -2,7 +2,7 @@
 name: flux
 description: |
   Manage Flux project issues, epics, milestones, scenes, use cases, and AppSignal incidents via the Flux CLI.
-  Use for ANY question or action about Flux issues, epics, milestones, scenes, use cases, personas, or incidents.
+  Use for ANY question or action about Flux issues, epics, milestones, scenes, use cases, or incidents.
 triggers:
   - flux issue
   - flux epic
@@ -49,8 +49,7 @@ CLI for managing issues, epics, milestones, scenes, use cases, and AppSignal inc
 4. **Check auth first** — if a command fails with "unauthorized", run `flux auth login --env prod --project <key> --json` and retry. For explicit test verification, authenticate to `--env test` instead.
 5. **Stage emojis belong in titles** — when advancing beyond Specification, the title must include the stage emoji at the end: ✏️ Design, 💻 Development, 🧪 Testing, ✅ Done. Use `issues update --title`; `issues advance` does not accept `--title`.
 6. **IDs are Basecamp recording IDs** — long integers like `9958752901`. Always pass the exact ID. Scenes and use cases also take their code (`SC-Next-02`, `UC-NEXT-01`).
-7. **Persona attribution** — use `--persona <name>` on issue create/update/comment/advance commands when acting on behalf of an AI persona (e.g. `--persona sam`).
-8. **Model attribution** — content-writing commands support `--ai-model <model>` for a caller-declared footer. Preserve it when supplied; do not invent a model identity. It is independent of `--persona`.
+7. **Model attribution** — content-writing commands support `--ai-model <model>` for a caller-declared footer. Preserve it when supplied; do not invent a model identity. Flux has no personas: content is written as the signed-in caller, so don't pass `--persona` (it is ignored).
 
 ## Quick Reference
 
@@ -100,7 +99,6 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Unlink use case | `flux usecases unlink <id-or-code> --target-type scene --target-id <scene> --env prod --project next --json` |
 | Issues of a use case | `flux usecases issues <id-or-code> --env prod --project next --json` |
 | Resync use case linked issues | `flux usecases resync <id-or-code> --env prod --project next --json` |
-| List personas | `flux personas list --env prod --project <key> --json` |
 | Upload image | `flux images upload --file <path> [--caption "..."] --env prod --project <key> --json` |
 | Render diagram | `flux diagrams render --file <path.mmd> --env prod --project <key> --json` |
 | Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --env prod --project <key> --json` |
@@ -219,12 +217,11 @@ flux issues advance <id> --stage testing --comment "PR #42 merged" --env prod --
 flux issues update <id> --title "[Web] Fix the thing 🧪" --env prod --project <key> --json
 ```
 
-### Add a comment with persona attribution
+### Add a comment
 
 ```bash
 flux issues comment <id> \
   --content "Investigated root cause: the session store is evicting tokens too early." \
-  --persona sam \
   --env prod --project <key> --json
 ```
 
@@ -277,8 +274,8 @@ The server processes comment and description content submitted through the CLI:
 
 Pass `--ai-model "<model>"` only when declaring the model that generated the
 description or comment you are supplying. It is optional, caller-declared display
-metadata, not verified identity. Never infer it from persona attribution,
-credentials, or environment. It does not invoke/select a model or change
+metadata, not verified identity. Never infer it from
+credentials or environment. It does not invoke/select a model or change
 authentication, environment, or project selection.
 
 Supported content writes:
@@ -292,7 +289,7 @@ Supported content writes:
 - `flux issues advance` for its optional `--comment` only, not its automatic stage comment
 
 ```bash
-flux issues comment <id> --content "Investigated the failure." --persona sam --ai-model "openai/gpt-5" --env prod --project <key> --json
+flux issues comment <id> --content "Investigated the failure." --ai-model "openai/gpt-5" --env prod --project <key> --json
 flux comments update <comment_id> --content "Revised findings." --ai-model "anthropic/claude-sonnet-4" --env prod --project <key> --json
 ```
 
@@ -333,7 +330,7 @@ Use `--json` output to chain commands: extract the `id` field from create respon
 ```
 
 Account and person IDs are strings. For API keys the identity is the actual bot
-principal, not a persona. No provider credentials or tokens are included.
+principal. No provider credentials or tokens are included.
 
 `flux issues get <id> --env prod --project <key> --json` scopes the issue lookup
 to that project; issues outside it return an error. Each `thread` comment
@@ -347,7 +344,7 @@ inferred from a name:
 
 Names can be shared. Within the same Basecamp account, compare a comment's
 `author_id` to the verified `basecamp_person_id` to determine whether it belongs
-to the signed-in principal; do not compare display names or persona labels.
+to the signed-in principal; do not compare display names.
 
 ## Error Handling
 

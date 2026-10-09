@@ -140,14 +140,6 @@ type AdvanceResult struct {
 	UserCommentID  string `json:"user_comment_id,omitempty"`
 }
 
-type Persona struct {
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	Role         string `json:"role"`
-	Signature    string `json:"signature"`
-	SystemPrompt string `json:"system_prompt,omitempty"`
-}
-
 func NewClient(baseURL, apiKey string) *Client {
 	return &Client{
 		baseURL:    baseURL,
@@ -388,50 +380,6 @@ func (c *Client) GetIssue(id, project string) (*Issue, error) {
 	}
 
 	return &issue, nil
-}
-
-type PersonasResponse struct {
-	Personas []Persona `json:"personas"`
-}
-
-type ListPersonasOptions struct {
-	Type          string // "dev", "conversation", or "all"
-	IncludePrompt bool   // Include system_prompt in response
-}
-
-func (c *Client) ListPersonas(opts *ListPersonasOptions) ([]Persona, error) {
-	endpoint := "/api/delivery/personas"
-
-	params := url.Values{}
-	if opts != nil {
-		if opts.Type != "" {
-			params.Set("type", opts.Type)
-		}
-		if opts.IncludePrompt {
-			params.Set("include_prompt", "true")
-		}
-	}
-
-	if len(params) > 0 {
-		endpoint = endpoint + "?" + params.Encode()
-	}
-
-	resp, err := c.get(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch personas: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.handleResponseError(resp, "fetch personas")
-	}
-
-	var response PersonasResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return response.Personas, nil
 }
 
 // =============================================================================

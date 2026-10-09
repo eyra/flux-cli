@@ -39,7 +39,7 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 	}{
 		{"issue create", "POST", "/issues", issuesCreateCmd, []string{"--title", "Title", "--app", "web", "--description", "Body"}, map[string]interface{}{"title": "Title", "app": "web", "description": "Body"}},
 		{"issue update", "PATCH", "/issues/42", issuesUpdateCmd, []string{"42", "--description", "Body"}, map[string]interface{}{"description": "Body"}},
-		{"issue comment", "POST", "/issues/42/comments", issuesCommentCmd, []string{"42", "--content", "Body", "--persona", "sam"}, map[string]interface{}{"content": "Body", "persona": "sam"}},
+		{"issue comment", "POST", "/issues/42/comments", issuesCommentCmd, []string{"42", "--content", "Body", "--persona", "sam"}, map[string]interface{}{"content": "Body"}},
 		{"issue advance", "POST", "/issues/42/advance", issuesAdvanceCmd, []string{"42", "--stage", "testing", "--comment", "Body"}, map[string]interface{}{"target_stage": "testing", "comment": "Body"}},
 		{"epic create", "POST", "/epics", epicsCreateCmd, []string{"--title", "Title", "--description", "Body"}, map[string]interface{}{"title": "Title", "description": "Body"}},
 		{"epic update", "PATCH", "/epics/42", epicsUpdateCmd, []string{"42", "--description", "Body"}, map[string]interface{}{"description": "Body"}},
@@ -47,7 +47,7 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 		{"milestone create", "POST", "/milestones", milestonesCreateCmd, []string{"--title", "Title", "--app", "web", "--description", "Body"}, map[string]interface{}{"title": "Title", "app": "web", "description": "Body"}},
 		{"milestone update", "PATCH", "/milestones/42", milestonesUpdateCmd, []string{"42", "--description", "Body"}, map[string]interface{}{"description": "Body"}},
 		{"milestone comment", "POST", "/milestones/42/comments", milestonesCommentCmd, []string{"42", "--content", "Body"}, map[string]interface{}{"content": "Body"}},
-		{"comment update", "PATCH", "/comments/42", commentsUpdateCmd, []string{"42", "--content", "Body", "--persona", "sam"}, map[string]interface{}{"content": "Body", "persona": "sam"}},
+		{"comment update", "PATCH", "/comments/42", commentsUpdateCmd, []string{"42", "--content", "Body", "--persona", "sam"}, map[string]interface{}{"content": "Body"}},
 		{"issue metadata only", "PATCH", "/issues/42", issuesUpdateCmd, []string{"42", "--title", "Title"}, map[string]interface{}{"title": "Title"}},
 		{"epic metadata only", "PATCH", "/epics/42", epicsUpdateCmd, []string{"42", "--title", "Title"}, map[string]interface{}{"title": "Title"}},
 		{"milestone metadata only", "PATCH", "/milestones/42", milestonesUpdateCmd, []string{"42", "--title", "Title"}, map[string]interface{}{"title": "Title"}},
@@ -127,7 +127,7 @@ func TestUnsupportedCommandsRejectAIModel(t *testing.T) {
 		issuesListCmd, issuesGetCmd, issuesDeleteCmd, issuesLinkCmd, issuesAssignCmd,
 		epicsListCmd, epicsGetCmd, epicsIssuesCmd, epicsResyncCmd,
 		milestonesListCmd, milestonesGetCmd, milestonesIssuesCmd, milestonesResyncCmd,
-		commentsDeleteCmd, authStatusCmd, personasListCmd,
+		commentsDeleteCmd, authStatusCmd,
 	} {
 		t.Run(command.CommandPath(), func(t *testing.T) {
 			isolateContentCommand(t, command)

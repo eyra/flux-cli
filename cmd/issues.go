@@ -22,7 +22,6 @@ var (
 	issueEpicFlag        string
 	issueMilestoneFlag   string
 	issueUseCaseFlag     string
-	issuePersonaFlag     string
 	// Advance flags
 	issueTargetStageFlag    string
 	issueTargetSubstageFlag string
@@ -189,7 +188,6 @@ var issuesCreateCmd = &cobra.Command{
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
 		}
@@ -225,7 +223,6 @@ var issuesUpdateCmd = &cobra.Command{
 			Size:        issueSizeFlag,
 			Priority:    issuePriorityFlag,
 			App:         issueAppFlag,
-			Persona:     issuePersonaFlag,
 			Project:     getProject(),
 			AIModel:     getAIModel(cmd),
 		}
@@ -277,7 +274,6 @@ var issuesCommentCmd = &cobra.Command{
 
 		req := api.CommentRequest{
 			Content: issueCommentContentFlag,
-			Persona: issuePersonaFlag,
 			Project: getProject(),
 			AIModel: getAIModel(cmd),
 		}
@@ -308,7 +304,6 @@ var issuesAdvanceCmd = &cobra.Command{
 			TargetStage:    issueTargetStageFlag,
 			TargetSubstage: issueTargetSubstageFlag,
 			Comment:        issueAdvanceCommentFlag,
-			Persona:        issuePersonaFlag,
 			Project:        getProject(),
 			AIModel:        getAIModel(cmd),
 		}
@@ -574,7 +569,7 @@ func init() {
 	issuesCreateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to")
 	issuesCreateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to, e.g. UC-NEXT-01")
-	issuesCreateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(issuesCreateCmd)
 	issuesCreateCmd.Flags().String("ai-model", "", "Caller-declared model for the description footer")
 
 	// Update flags
@@ -587,19 +582,19 @@ func init() {
 	issuesUpdateCmd.Flags().StringVar(&issueEpicFlag, "epic", "", "Epic ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueMilestoneFlag, "milestone", "", "Milestone ID to link to (empty to remove)")
 	issuesUpdateCmd.Flags().StringVar(&issueUseCaseFlag, "usecase", "", "Use case ID or code to link to (empty to remove)")
-	issuesUpdateCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(issuesUpdateCmd)
 	issuesUpdateCmd.Flags().String("ai-model", "", "Caller-declared model for the supplied description footer")
 
 	// Comment flags
 	issuesCommentCmd.Flags().StringVar(&issueCommentContentFlag, "content", "", "Comment content (required)")
-	issuesCommentCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(issuesCommentCmd)
 	issuesCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 
 	// Advance flags
 	issuesAdvanceCmd.Flags().StringVar(&issueTargetStageFlag, "stage", "", "Target stage (specification, design, development, testing)")
 	issuesAdvanceCmd.Flags().StringVar(&issueTargetSubstageFlag, "substage", "", "Target sub-stage")
 	issuesAdvanceCmd.Flags().StringVar(&issueAdvanceCommentFlag, "comment", "", "Comment explaining the transition")
-	issuesAdvanceCmd.Flags().StringVar(&issuePersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(issuesAdvanceCmd)
 	issuesAdvanceCmd.Flags().String("ai-model", "", "Caller-declared model for the optional comment footer")
 
 	// Link flags
@@ -619,4 +614,11 @@ func addContextFlags(cmd *cobra.Command, usage string) {
 	cmd.Flags().StringVar(&issueContextFlag, "context", "", usage)
 	cmd.Flags().StringVar(&issueContextFlag, "program", "", usage)
 	cmd.Flags().MarkDeprecated("program", "use --context instead")
+}
+
+// addRemovedPersonaFlag keeps --persona as a hidden no-op, so scripts that
+// still pass it keep working: personas were removed from Flux.
+func addRemovedPersonaFlag(cmd *cobra.Command) {
+	cmd.Flags().String("persona", "", "")
+	cmd.Flags().MarkDeprecated("persona", "personas were removed from Flux; the flag is ignored")
 }
