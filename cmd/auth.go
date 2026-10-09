@@ -56,7 +56,7 @@ var authStatusCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		env := getEnv()
 
-		client := api.NewClient(baseURLForEnv(env), getAPIKey())
+		client := api.NewClient(baseURLForEnv(env), getAccessToken())
 		identity, err := client.GetIdentity()
 		if err != nil {
 			return err

@@ -53,11 +53,11 @@ local credential file. On success it returns:
 {"signed_in":true,"env":"test","basecamp_account_id":"123","basecamp_person_id":"456","display_name":"Alex"}
 ```
 
-The Basecamp account and person IDs are strings identifying the actual signed-in
-principal (including the bot for API keys). No tokens are returned.
+The Basecamp account and person IDs are strings identifying the signed-in
+person. No tokens are returned.
 Missing, invalid, or unverifiable authentication exits nonzero without success
-JSON. Credential precedence remains `--api-key`, `FLUX_API_KEY`, then the selected
-environment's saved personal credentials.
+JSON. Sign in with `flux auth login`; the CLI uses the selected environment's
+saved credentials.
 
 ### Issue thread JSON
 
@@ -224,5 +224,6 @@ go build -o flux .
 ./flux issues list --env test
 
 # Run against a local server
-FLUX_BASE_URL=http://localhost:4040 ./flux scenes list --project next --api-key <key>
+FLUX_BASE_URL=http://localhost:4040 ./flux auth login
+FLUX_BASE_URL=http://localhost:4040 ./flux scenes list --project next
 ```

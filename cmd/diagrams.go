@@ -36,7 +36,7 @@ var diagramsRenderCmd = &cobra.Command{
 			return fmt.Errorf("--file or --mermaid is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.RenderDiagram(mermaid, diagramCaptionFlag, getProject())
 		if err != nil {
 			return err

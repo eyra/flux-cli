@@ -25,7 +25,7 @@ var commentsUpdateCmd = &cobra.Command{
 			return fmt.Errorf("--content is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.UpdateComment(args[0], api.CommentRequest{
 			Content: commentContent,
 			Project: getProject(),
@@ -49,7 +49,7 @@ var commentsDeleteCmd = &cobra.Command{
 	Short: "Delete (trash) a comment",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.DeleteComment(args[0], getProject())
 		if err != nil {
 			return err

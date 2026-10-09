@@ -59,7 +59,7 @@ IDs may be Basecamp IDs or codes such as UC-NEXT-01.`,
 }
 
 func (p *productCommand) client() *api.Client {
-	return api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+	return api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 }
 
 func (p *productCommand) listCmd() *cobra.Command {

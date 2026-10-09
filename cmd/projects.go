@@ -17,7 +17,7 @@ var projectsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available projects",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		projects, err := client.ListProjects()
 		if err != nil {

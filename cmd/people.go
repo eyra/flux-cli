@@ -17,7 +17,7 @@ var peopleListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List people on the project",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		people, err := client.ListPeople(getProject())
 		if err != nil {
 			return err

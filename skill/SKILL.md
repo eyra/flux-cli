@@ -246,11 +246,11 @@ flux auth logout --env prod --project <key> --json  # Sign out of production
 flux auth status --env prod --project <key> --json  # Check production status
 ```
 
-Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. The old `FLUX_API_KEY` env var and `--api-key` flag still work for CI/CD.
+Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. Sign in with `flux auth login`.
 
 `auth status` verifies the active credentials through the selected server's
-`GET /api/delivery/identity` endpoint. Credential precedence is `--api-key`, then
-`FLUX_API_KEY`, then saved personal credentials for the selected environment.
+`GET /api/delivery/identity` endpoint, using the saved credentials for the
+selected environment.
 Missing, invalid, or unverifiable authentication exits nonzero without success
 JSON; a local credential file alone is not proof of authentication.
 
@@ -329,8 +329,8 @@ Use `--json` output to chain commands: extract the `id` field from create respon
 {"signed_in":true,"env":"prod","basecamp_account_id":"123","basecamp_person_id":"456","display_name":"Alex"}
 ```
 
-Account and person IDs are strings. For API keys the identity is the actual bot
-principal. No provider credentials or tokens are included.
+Account and person IDs are strings identifying the signed-in person. No provider
+credentials or tokens are included.
 
 `flux issues get <id> --env prod --project <key> --json` scopes the issue lookup
 to that project; issues outside it return an error. Each `thread` comment
