@@ -48,7 +48,7 @@ local credential file. On success it returns:
 ```
 
 The Basecamp account and person IDs are strings identifying the actual signed-in
-principal (including the bot for API keys), not a persona. No tokens are returned.
+principal (including the bot for API keys). No tokens are returned.
 Missing, invalid, or unverifiable authentication exits nonzero without success
 JSON. Credential precedence remains `--api-key`, `FLUX_API_KEY`, then the selected
 environment's saved personal credentials.
@@ -68,7 +68,7 @@ the server sends it: `--json` output repeats the server's JSON and keeps every
 field, including `ref`, `epic`, `milestone`, `use_case` and `url`. Names are not unique;
 compare `author_id` with verified `basecamp_person_id` to identify the signed-in
 person's comments, within the same Basecamp account. Do not derive identity from
-the name or persona attribution.
+the name.
 
 ### Scenes and use cases
 
@@ -154,12 +154,6 @@ Flux does not link epics to milestones. The old `epics link` and
 `milestones epics` commands are removed; link issues with `flux issues link`
 and list a milestone's issues with `flux milestones issues`.
 
-### List personas
-
-```bash
-flux personas list
-```
-
 ### AI model attribution on content
 
 Use optional `--ai-model` to declare which model generated text you supply:
@@ -178,7 +172,7 @@ resyncs, and other operations.
 
 The CLI forwards the exact string as JSON `ai_model`, including provider/model
 IDs, whitespace, and HTML-looking text. When omitted, the JSON field is omitted;
-no model is inferred from a persona, credentials, or environment. This is
+no model is inferred from credentials or environment. This is
 caller-declared display metadata, not verified identity: it does not invoke or
 select a model, change authentication, or change environment/project selection.
 

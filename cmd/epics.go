@@ -17,7 +17,6 @@ var (
 	epicAssigneesFlag   string
 	epicBranchFlag      string
 	epicContentFlag     string
-	epicPersonaFlag     string
 )
 
 var epicsCmd = &cobra.Command{
@@ -247,7 +246,6 @@ var epicsCommentCmd = &cobra.Command{
 
 		req := api.CommentRequest{
 			Content: epicContentFlag,
-			Persona: epicPersonaFlag,
 			Project: getProject(),
 			AIModel: getAIModel(cmd),
 		}
@@ -320,6 +318,6 @@ func init() {
 
 	// Comment flags
 	epicsCommentCmd.Flags().StringVar(&epicContentFlag, "content", "", "Comment content (required)")
-	epicsCommentCmd.Flags().StringVar(&epicPersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(epicsCommentCmd)
 	epicsCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 }

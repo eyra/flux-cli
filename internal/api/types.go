@@ -29,7 +29,6 @@ type CreateIssueRequest struct {
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
 }
@@ -43,7 +42,6 @@ type UpdateIssueRequest struct {
 	Size        string  `json:"size,omitempty"`
 	Priority    int     `json:"priority,omitempty"`
 	App         string  `json:"app,omitempty"`
-	Persona     string  `json:"persona,omitempty"`
 	Project     string  `json:"project,omitempty"`
 	AIModel     *string `json:"ai_model,omitempty"`
 }
@@ -53,7 +51,6 @@ type AdvanceIssueRequest struct {
 	TargetStage    string  `json:"target_stage,omitempty"`
 	TargetSubstage string  `json:"target_substage,omitempty"`
 	Comment        string  `json:"comment,omitempty"`
-	Persona        string  `json:"persona,omitempty"`
 	Project        string  `json:"project,omitempty"`
 	AIModel        *string `json:"ai_model,omitempty"`
 }
@@ -69,7 +66,6 @@ type LinkRequest struct {
 // CommentRequest is the request body for adding or updating a comment
 type CommentRequest struct {
 	Content string  `json:"content"`
-	Persona string  `json:"persona,omitempty"`
 	Project string  `json:"project,omitempty"`
 	AIModel *string `json:"ai_model,omitempty"`
 }

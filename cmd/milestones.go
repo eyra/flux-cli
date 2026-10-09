@@ -19,7 +19,6 @@ var (
 	milestoneGithubMilestoneFlag int
 	milestoneAssigneesFlag       string
 	milestoneContentFlag         string
-	milestonePersonaFlag         string
 	milestoneAppFlag             string
 )
 
@@ -280,7 +279,6 @@ var milestonesCommentCmd = &cobra.Command{
 
 		req := api.CommentRequest{
 			Content: milestoneContentFlag,
-			Persona: milestonePersonaFlag,
 			Project: getProject(),
 			AIModel: getAIModel(cmd),
 		}
@@ -360,6 +358,6 @@ func init() {
 
 	// Comment flags
 	milestonesCommentCmd.Flags().StringVar(&milestoneContentFlag, "content", "", "Comment content (required)")
-	milestonesCommentCmd.Flags().StringVar(&milestonePersonaFlag, "persona", "", "Persona name for attribution")
+	addRemovedPersonaFlag(milestonesCommentCmd)
 	milestonesCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 }
