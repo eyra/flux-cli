@@ -5,6 +5,12 @@ Command-line interface for Flux project management.
 ## Installation
 
 ```bash
+brew install eyra/tap/flux-cli
+```
+
+Or with Go:
+
+```bash
 go install github.com/eyra/flux-cli@latest
 ```
 
