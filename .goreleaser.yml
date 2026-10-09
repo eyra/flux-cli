@@ -28,6 +28,25 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+homebrew_casks:
+  - name: flux-cli
+    binaries:
+      - flux
+    description: Command-line interface for Flux project management
+    homepage: https://github.com/eyra/flux-cli
+    repository:
+      owner: eyra
+      name: homebrew-tap
+      git:
+        url: git@github.com:eyra/homebrew-tap.git
+        private_key: '{{ index .Env "HOMEBREW_TAP_DEPLOY_KEY" }}'
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/flux"]
+          end
+
 release:
   github:
     owner: eyra
