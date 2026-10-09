@@ -246,7 +246,7 @@ flux auth logout --env prod --project <key> --json  # Sign out of production
 flux auth status --env prod --project <key> --json  # Check production status
 ```
 
-Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. API keys are no longer supported: `--api-key` fails and `FLUX_API_KEY` is ignored. Sign in with `flux auth login`.
+Credentials stored in `~/.config/flux/credentials.json`, one entry per environment. Sign in with `flux auth login`.
 
 `auth status` verifies the active credentials through the selected server's
 `GET /api/delivery/identity` endpoint, using the saved credentials for the

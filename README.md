@@ -56,9 +56,8 @@ local credential file. On success it returns:
 The Basecamp account and person IDs are strings identifying the signed-in
 person. No tokens are returned.
 Missing, invalid, or unverifiable authentication exits nonzero without success
-JSON. The CLI uses the selected environment's saved credentials from
-`flux auth login`. API keys are no longer supported: `--api-key` fails with a
-message to run `flux auth login`, and `FLUX_API_KEY` is ignored with a warning.
+JSON. Sign in with `flux auth login`; the CLI uses the selected environment's
+saved credentials.
 
 ### Issue thread JSON
 
