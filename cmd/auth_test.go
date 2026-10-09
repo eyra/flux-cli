@@ -48,11 +48,25 @@ func isolateCommand(t *testing.T) {
 	})
 }
 
+// saveFixtureToken signs in to env with the access token "fixture-key".
+func saveFixtureToken(t *testing.T, env string) {
+	t.Helper()
+	if err := auth.Save(env, &auth.Credentials{AccessToken: "fixture-key", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAuthStatusVerifiedIdentity(t *testing.T) {
-	for _, source := range []string{"personal", "environment key", "explicit key"} {
-		t.Run(source, func(t *testing.T) {
+	for _, tc := range []struct {
+		name, apiKeyEnv string
+	}{
+		{name: "personal"},
+		{name: "FLUX_API_KEY is ignored", apiKeyEnv: "environment-key"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
 			isolateCommand(t)
 			t.Setenv("FLUX_ENV", "test")
+			t.Setenv("FLUX_API_KEY", tc.apiKeyEnv)
 			if err := rootCmd.PersistentFlags().Parse([]string{"--env", "prod", "--json"}); err != nil {
 				t.Fatal(err)
 			}
@@ -67,16 +81,6 @@ func TestAuthStatusVerifiedIdentity(t *testing.T) {
 				t.Fatal(err)
 			}
 			credential := "prod-personal"
-			if source != "personal" {
-				t.Setenv("FLUX_API_KEY", "environment-key")
-				credential = "environment-key"
-			}
-			if source == "explicit key" {
-				if err := rootCmd.PersistentFlags().Set("api-key", "explicit-key"); err != nil {
-					t.Fatal(err)
-				}
-				credential = "explicit-key"
-			}
 			requests := 0
 			http.DefaultTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				requests++
@@ -162,5 +166,53 @@ func TestEnvironmentAndProjectSelection(t *testing.T) {
 				t.Fatalf("got env/project %s/%s; want %s/%s", getEnv(), getProject(), tc.wantEnv, tc.wantProject)
 			}
 		})
+	}
+}
+
+func TestRemovedAPIKey(t *testing.T) {
+	for _, tc := range []struct {
+		name, apiKeyEnv string
+		args            []string
+		wantErr         error
+		wantWarning     bool
+	}{
+		{name: "no key", args: []string{"projects", "list"}},
+		{name: "flag", args: []string{"projects", "list", "--api-key", "old-key"}, wantErr: errAPIKeyRemoved},
+		{name: "flag before command", args: []string{"--api-key=old-key", "issues", "list"}, wantErr: errAPIKeyRemoved},
+		{name: "flag on auth status", args: []string{"auth", "status", "--api-key", "old-key"}, wantErr: errAPIKeyRemoved},
+		{name: "environment", apiKeyEnv: "old-key", args: []string{"projects", "list"}, wantWarning: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			isolateCommand(t)
+			t.Setenv("FLUX_API_KEY", tc.apiKeyEnv)
+			command, _, err := rootCmd.Find(tc.args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := rootCmd.ParseFlags(tc.args); err != nil {
+				t.Fatal(err)
+			}
+			if err := command.ParseFlags(tc.args); err != nil {
+				t.Fatal(err)
+			}
+			var stderr bytes.Buffer
+			command.SetErr(&stderr)
+			t.Cleanup(func() { command.SetErr(nil) })
+			err = rootCmd.PersistentPreRunE(command, nil)
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("got error %v; want %v", err, tc.wantErr)
+			}
+			warned := strings.Contains(stderr.String(), "FLUX_API_KEY is ignored")
+			if warned != tc.wantWarning || (tc.wantWarning && !strings.Contains(stderr.String(), "flux auth login")) {
+				t.Fatalf("unexpected warning output: %q", stderr.String())
+			}
+		})
+	}
+}
+
+func TestAPIKeyFlagHidden(t *testing.T) {
+	flag := rootCmd.PersistentFlags().Lookup("api-key")
+	if flag == nil || !flag.Hidden {
+		t.Fatal("--api-key must stay registered but hidden, so old scripts get a helpful error")
 	}
 }

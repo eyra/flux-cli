@@ -45,7 +45,7 @@ var issuesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List issues",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		issues, err := client.ListIssues(api.ListIssuesOptions{
 			Stage:     stageFlag,
@@ -94,7 +94,7 @@ var issuesGetCmd = &cobra.Command{
 	Short: "Get issue details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		issue, err := client.GetIssue(args[0], getProject())
 		if err != nil {
@@ -175,7 +175,7 @@ var issuesCreateCmd = &cobra.Command{
 			return fmt.Errorf("--app is required (web, ios, or android)")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		if err := checkUseCaseTarget(cmd, client); err != nil {
 			return fmt.Errorf("no issue was created: %w", err)
 		}
@@ -211,7 +211,7 @@ var issuesUpdateCmd = &cobra.Command{
 	Short: "Update an existing issue",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		if err := checkUseCaseTarget(cmd, client); err != nil {
 			return fmt.Errorf("issue %s was not updated: %w", args[0], err)
 		}
@@ -246,7 +246,7 @@ var issuesDeleteCmd = &cobra.Command{
 	Short: "Delete an issue",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		if err := client.DeleteIssue(args[0], getProject()); err != nil {
 			return err
@@ -270,7 +270,7 @@ var issuesCommentCmd = &cobra.Command{
 			return fmt.Errorf("--content is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.CommentRequest{
 			Content: issueCommentContentFlag,
@@ -298,7 +298,7 @@ var issuesAdvanceCmd = &cobra.Command{
 	Short: "Advance an issue to the next stage",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.AdvanceIssueRequest{
 			TargetStage:    issueTargetStageFlag,
@@ -344,7 +344,7 @@ var issuesLinkCmd = &cobra.Command{
 			return fmt.Errorf("--target-type and --target-id are required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		action := "link"
 		if issueUnlinkFlag {
@@ -382,7 +382,7 @@ var issuesAssignCmd = &cobra.Command{
 		if issueAssigneeIDsFlag == "" {
 			return fmt.Errorf("--assignees is required")
 		}
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		req := api.AssignIssueRequest{
 			AssigneeIDs: issueAssigneeIDsFlag,
 			Project:     getProject(),

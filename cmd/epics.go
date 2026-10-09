@@ -28,7 +28,7 @@ var epicsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List epics",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		opts := api.ListEpicsOptions{
 			Milestone: epicMilestoneFlag,
@@ -73,7 +73,7 @@ var epicsGetCmd = &cobra.Command{
 	Short: "Get epic details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		epic, err := client.GetEpic(args[0], getProject())
 		if err != nil {
@@ -131,7 +131,7 @@ var epicsCreateCmd = &cobra.Command{
 			return fmt.Errorf("--title is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.CreateEpicRequest{
 			Title:       epicTitleFlag,
@@ -163,7 +163,7 @@ var epicsUpdateCmd = &cobra.Command{
 	Short: "Update an existing epic",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.UpdateEpicRequest{
 			Title:       epicTitleFlag,
@@ -195,7 +195,7 @@ var epicsIssuesCmd = &cobra.Command{
 	Short: "List issues linked to an epic",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		issues, err := client.ListEpicIssues(args[0], epicCompletedFlag, getProject())
 		if err != nil {
@@ -242,7 +242,7 @@ var epicsCommentCmd = &cobra.Command{
 			return fmt.Errorf("--content is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.CommentRequest{
 			Content: epicContentFlag,
@@ -270,7 +270,7 @@ var epicsResyncCmd = &cobra.Command{
 	Short: "Refresh linked issue titles on an epic",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.ResyncEpic(args[0], getProject())
 		if err != nil {
 			return err

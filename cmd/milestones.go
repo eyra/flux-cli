@@ -31,7 +31,7 @@ var milestonesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List milestones",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		opts := api.ListMilestonesOptions{
 			Completed: milestoneCompletedFlag,
@@ -80,7 +80,7 @@ var milestonesGetCmd = &cobra.Command{
 	Short: "Get milestone details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		milestone, err := client.GetMilestone(args[0], getProject())
 		if err != nil {
@@ -157,7 +157,7 @@ var milestonesCreateCmd = &cobra.Command{
 			return fmt.Errorf("--app is required (web, ios, or android)")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.CreateMilestoneRequest{
 			Title:           milestoneTitleFlag,
@@ -193,7 +193,7 @@ var milestonesUpdateCmd = &cobra.Command{
 	Short: "Update an existing milestone",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.UpdateMilestoneRequest{
 			Title:           milestoneTitleFlag,
@@ -233,7 +233,7 @@ var milestonesIssuesCmd = &cobra.Command{
 	Short: "List issues linked to a milestone",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		issues, err := client.ListMilestoneIssues(args[0], milestoneCompletedFlag, getProject())
 		if err != nil {
@@ -275,7 +275,7 @@ var milestonesCommentCmd = &cobra.Command{
 			return fmt.Errorf("--content is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.CommentRequest{
 			Content: milestoneContentFlag,
@@ -303,7 +303,7 @@ var milestonesResyncCmd = &cobra.Command{
 	Short: "Refresh linked issue titles on a milestone",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.ResyncMilestone(args[0], getProject())
 		if err != nil {
 			return err

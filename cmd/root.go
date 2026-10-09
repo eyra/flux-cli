@@ -14,9 +14,25 @@ import (
 var (
 	envFlag     string
 	jsonFlag    bool
-	apiKeyFlag  string
 	projectFlag string
 )
+
+// errAPIKeyRemoved is returned for the removed --api-key flag. The server
+// rejects shared API keys: Flux acts on behalf of the signed-in person.
+var errAPIKeyRemoved = errors.New("API keys are no longer supported; run flux auth login")
+
+// rejectAPIKey stops old scripts that still pass --api-key, and warns that
+// FLUX_API_KEY is ignored.
+func rejectAPIKey(cmd *cobra.Command, args []string) error {
+	if cmd.Flags().Changed("api-key") {
+		cmd.SilenceUsage = true
+		return errAPIKeyRemoved
+	}
+	if os.Getenv("FLUX_API_KEY") != "" {
+		fmt.Fprintln(cmd.ErrOrStderr(), "Warning: FLUX_API_KEY is ignored. API keys are no longer supported; run flux auth login")
+	}
+	return nil
+}
 
 func getEnv() string {
 	// Flag takes precedence, then env var, then default
@@ -40,14 +56,9 @@ func baseURLForEnv(env string) string {
 	return "https://eyra-flux.fly.dev"
 }
 
-func getAPIKey() string {
-	if apiKeyFlag != "" {
-		return apiKeyFlag
-	}
-	if key := os.Getenv("FLUX_API_KEY"); key != "" {
-		return key
-	}
-
+// getAccessToken returns the saved access token for the selected
+// environment, refreshing it when it expires soon.
+func getAccessToken() string {
 	env := getEnv()
 	creds, err := auth.Load(env)
 	if err != nil || creds == nil {
@@ -144,6 +155,7 @@ var rootCmd = &cobra.Command{
 Environments:
   prod  - eyra-flux (default) - Eyra dev projects (Next, Feldspar)
   test  - eyra-flux-test - Flux dogfooding`,
+	PersistentPreRunE: rejectAPIKey,
 }
 
 func Execute() {
@@ -156,6 +168,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&envFlag, "env", "e", "prod", "Environment: prod or test")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as JSON")
-	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key for API requests (or use FLUX_API_KEY env var)")
+	rootCmd.PersistentFlags().String("api-key", "", "Removed: API keys are no longer supported; run flux auth login")
+	rootCmd.PersistentFlags().MarkHidden("api-key") //nolint:errcheck
 	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", `Project key, e.g. flux, next or feldspar; "flux projects list" shows all (default: next on prod, flux on test)`)
 }

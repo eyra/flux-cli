@@ -36,7 +36,7 @@ const (
 
 type Client struct {
 	baseURL    string
-	apiKey     string
+	token      string
 	httpClient *http.Client
 	// legacyDelivery is set once the server turns out to predate
 	// /api/delivery; delivery requests then go to /api/dev.
@@ -140,10 +140,10 @@ type AdvanceResult struct {
 	UserCommentID  string `json:"user_comment_id,omitempty"`
 }
 
-func NewClient(baseURL, apiKey string) *Client {
+func NewClient(baseURL, token string) *Client {
 	return &Client{
 		baseURL:    baseURL,
-		apiKey:     apiKey,
+		token:      token,
 		httpClient: &http.Client{},
 	}
 }
@@ -188,8 +188,8 @@ func (c *Client) send(endpoint string, build func(endpoint string) (*http.Reques
 	if err != nil {
 		return nil, err
 	}
-	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil || !delivery || c.legacyDelivery || !routeMissing(resp) {
@@ -286,7 +286,7 @@ func ambiguousCodeError(message string, ids []string) error {
 }
 
 func (c *Client) GetIdentity() (*Identity, error) {
-	if c.apiKey == "" {
+	if c.token == "" {
 		return nil, ErrUnauthorized
 	}
 

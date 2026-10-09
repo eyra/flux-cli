@@ -66,7 +66,8 @@ func TestContentCommandsAIModelRequests(t *testing.T) {
 			} {
 				t.Run(model.name, func(t *testing.T) {
 					isolateContentCommand(t, operation.command)
-					if err := rootCmd.PersistentFlags().Parse([]string{"--api-key", "fixture-key", "--env", "test", "--project", "fixture-project", "--json"}); err != nil {
+					saveFixtureToken(t, "test")
+					if err := rootCmd.PersistentFlags().Parse([]string{"--env", "test", "--project", "fixture-project", "--json"}); err != nil {
 						t.Fatal(err)
 					}
 					want := map[string]interface{}{"project": "fixture-project"}

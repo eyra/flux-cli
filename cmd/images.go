@@ -26,7 +26,7 @@ var imagesUploadCmd = &cobra.Command{
 			return fmt.Errorf("--file is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 		result, err := client.UploadImage(imageFileFlag, imageCaptionFlag, getProject())
 		if err != nil {
 			return err

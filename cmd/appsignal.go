@@ -33,7 +33,7 @@ var appsignalAppsCmd = &cobra.Command{
 	Use:   "apps",
 	Short: "List available AppSignal applications",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		apps, err := client.ListAppSignalApps()
 		if err != nil {
@@ -72,7 +72,7 @@ var appsignalIncidentsListCmd = &cobra.Command{
 			return fmt.Errorf("--app is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		opts := api.ListIncidentsOptions{
 			App:       appsignalAppFlag,
@@ -125,7 +125,7 @@ var appsignalIncidentsGetCmd = &cobra.Command{
 			return fmt.Errorf("invalid incident number: %s", args[0])
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		incident, err := client.GetIncident(appsignalAppFlag, number)
 		if err != nil {
@@ -185,7 +185,7 @@ var appsignalIncidentsUpdateCmd = &cobra.Command{
 			return fmt.Errorf("--app is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		req := api.UpdateIncidentRequest{
 			State:    appsignalStateFlag,
@@ -220,7 +220,7 @@ var appsignalIncidentsNoteCmd = &cobra.Command{
 			return fmt.Errorf("invalid incident number: %s", args[0])
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		if err := client.AddIncidentNote(appsignalAppFlag, number, appsignalContentFlag); err != nil {
 			return err
@@ -240,7 +240,7 @@ var appsignalResourcesCmd = &cobra.Command{
 			return fmt.Errorf("--app is required")
 		}
 
-		client := api.NewClient(baseURLForEnv(getEnv()), getAPIKey())
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
 
 		resources, err := client.GetAppSignalResources(appsignalAppFlag, appsignalSectionsFlag)
 		if err != nil {

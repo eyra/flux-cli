@@ -43,7 +43,8 @@ func runCommand(t *testing.T, argv []string, json bool, handler http.HandlerFunc
 		t.Fatal(err)
 	}
 	isolateContentCommand(t, command)
-	persistent := []string{"--api-key", "fixture-key", "--env", "test", "--project", "fixture-project"}
+	saveFixtureToken(t, "test")
+	persistent := []string{"--env", "test", "--project", "fixture-project"}
 	if json {
 		persistent = append(persistent, "--json")
 	}
