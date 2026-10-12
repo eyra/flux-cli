@@ -14,6 +14,22 @@ Or with Go:
 go install github.com/eyra/flux-cli@latest
 ```
 
+### Agent skill
+
+The binary carries the flux skill for AI coding agents. Install it for the
+agents you use, and rerun after upgrading flux:
+
+```bash
+flux install claude   # Claude Code: ~/.claude/skills/flux (CLAUDE_CONFIG_DIR replaces ~/.claude)
+flux install omp      # omp: ~/.omp/agent/skills/flux (PI_CODING_AGENT_DIR replaces ~/.omp/agent)
+flux install codex    # Codex: ~/.agents/skills/flux
+```
+
+omp also reads `~/.agents/skills`, so `flux install codex` makes the skill
+available to omp too. A `SKILL.md` that differs from the installed version is
+first backed up to `SKILL.md.bak-<time>`. A symlinked skill folder or file is
+left alone, and the command fails.
+
 ## Usage
 
 ### List issues

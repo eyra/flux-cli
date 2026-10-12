@@ -40,6 +40,12 @@ homebrew_casks:
       git:
         url: git@github.com:eyra/homebrew-tap.git
         private_key: '{{ index .Env "HOMEBREW_TAP_DEPLOY_KEY" }}'
+    caveats: |
+      Install the flux skill for your AI coding agents with one or more of:
+        flux install claude
+        flux install omp
+        flux install codex
+      Rerun them after `brew upgrade flux-cli` to update the skill.
     hooks:
       post:
         install: |
