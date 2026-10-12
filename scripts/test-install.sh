@@ -1,15 +1,16 @@
 #!/bin/bash
 #
 # Checks that the goreleaser archives and install.sh agree: every archive in
-# dist/ must contain the binary and skill/SKILL.md, and installing the archive
-# for this machine through install.sh must put both in place.
+# dist/ must contain the binary, and installing the archive for this machine
+# through install.sh must put the binary and, through `flux install claude`,
+# the skill in place.
 #
 # Usage: scripts/test-install.sh [dist-dir]
 #   Build the archives first: goreleaser release --snapshot --clean
 #
-# Runs with a temporary HOME, and INSTALL_DIR and SKILL_DIR unset so they
-# default into it, from a directory without go.mod, so it never touches the
-# real installation.
+# Runs with a temporary HOME, and INSTALL_DIR and CLAUDE_CONFIG_DIR unset so
+# they default into it, from a directory without go.mod, so it never touches
+# the real installation.
 
 set -euo pipefail
 
@@ -28,8 +29,7 @@ ARCHIVES=("$DIST"/flux_*.tar.gz)
 for a in "${ARCHIVES[@]}"; do
   CONTENTS="$(tar -tzf "$a")"
   grep -qx "flux" <<<"$CONTENTS" || fail "$(basename "$a") has no flux binary"
-  grep -qx "skill/SKILL.md" <<<"$CONTENTS" || fail "$(basename "$a") has no skill/SKILL.md"
-  echo "ok: $(basename "$a") contains flux and skill/SKILL.md"
+  echo "ok: $(basename "$a") contains flux"
 done
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -44,12 +44,12 @@ trap 'rm -rf "$SANDBOX"' EXIT
 mkdir -p "$SANDBOX/home" "$SANDBOX/work"
 
 # run_install: install $ARCHIVE through install.sh inside the sandbox. A
-# developer's exported INSTALL_DIR or SKILL_DIR must never leak in.
+# developer's exported INSTALL_DIR or CLAUDE_CONFIG_DIR must never leak in.
 run_install() {
   (
     cd "$SANDBOX/work"
     [ ! -f go.mod ] || fail "work directory has a go.mod"
-    env -u INSTALL_DIR -u SKILL_DIR HOME="$SANDBOX/home" FLUX_ARCHIVE="$ARCHIVE" \
+    env -u INSTALL_DIR -u CLAUDE_CONFIG_DIR HOME="$SANDBOX/home" FLUX_ARCHIVE="$ARCHIVE" \
       bash "$ROOT/install.sh"
   )
 }

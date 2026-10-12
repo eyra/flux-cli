@@ -22,8 +22,9 @@ archives:
   - formats:
       - tar.gz
     name_template: "flux_{{ .Os }}_{{ .Arch }}"
+    # The binary embeds skill/SKILL.md; `flux install` installs it.
     files:
-      - skill/SKILL.md
+      - none*
 
 checksum:
   name_template: "checksums.txt"

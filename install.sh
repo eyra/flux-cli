@@ -8,9 +8,11 @@
 # Install from source (requires Go):
 #   git clone https://github.com/eyra/flux-cli && cd flux-cli && ./install.sh
 #
+# The Claude Code skill is installed with `flux install claude`, into
+# ~/.claude/skills/flux (or $CLAUDE_CONFIG_DIR/skills/flux).
+#
 # Overrides:
 #   INSTALL_DIR   where the binary goes (default: ~/.local/bin)
-#   SKILL_DIR     where the Claude Code skill goes (default: ~/.claude/skills/flux)
 #   FLUX_ARCHIVE  install this local release archive instead of downloading one
 #                 (used by scripts/test-install.sh)
 #
@@ -18,33 +20,13 @@
 set -e
 
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
-SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/flux}"
 REPO="eyra/flux-cli"
 
-# install_skill <dir>: copy the skill from <dir>/skill/SKILL.md, the layout of
-# both the repo and the release archive (see .goreleaser.yml). <dir>/SKILL.md is
-# accepted as a fallback for a flat archive.
+# install_skill: install the skill embedded in the binary. A failure (such as a
+# symlinked skill folder) leaves the installed binary in place.
 install_skill() {
-  SRC=""
-  for f in "$1/skill/SKILL.md" "$1/SKILL.md"; do
-    if [ -f "$f" ]; then
-      SRC="$f"
-      break
-    fi
-  done
-  if [ -z "$SRC" ]; then
-    echo "Warning: no SKILL.md found in $1; skipping the Claude Code skill"
-    return
-  fi
-  echo "Installing Claude Code skill to $SKILL_DIR..."
-  mkdir -p "$SKILL_DIR"
-  # Keep a locally edited skill instead of silently overwriting it.
-  if [ -f "$SKILL_DIR/SKILL.md" ] && ! cmp -s "$SRC" "$SKILL_DIR/SKILL.md"; then
-    BACKUP="$SKILL_DIR/SKILL.md.bak-$(date +%Y%m%d-%H%M%S)"
-    cp "$SKILL_DIR/SKILL.md" "$BACKUP"
-    echo "Your existing SKILL.md differs from this release; backed it up to $BACKUP"
-  fi
-  cp "$SRC" "$SKILL_DIR/SKILL.md"
+  "$INSTALL_DIR/flux" install claude ||
+    echo "Warning: the Claude Code skill was not installed; see the error above"
 }
 
 check_path() {
@@ -76,7 +58,7 @@ install_from_release() {
   mv "$TMP/flux" "$INSTALL_DIR/flux"
   chmod +x "$INSTALL_DIR/flux"
 
-  install_skill "$TMP"
+  install_skill
 
   rm -rf "$TMP"
   echo "Installed $LATEST to $INSTALL_DIR/flux"
@@ -118,7 +100,7 @@ install_from_source() {
   mv flux "$INSTALL_DIR/flux"
   echo "Installed to $INSTALL_DIR/flux"
 
-  install_skill .
+  install_skill
 }
 
 # Build from source if in the repo and Go is available; otherwise download a release
