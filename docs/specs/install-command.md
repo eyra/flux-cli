@@ -1,7 +1,8 @@
 # Spec: `flux install claude` / `omp` / `codex`
 
-- **Status:** implemented (step 1 of "Switching over"). Step 2 waits for the
-  `v0.5.0` release.
+- **Status:** implemented. Released in `v0.5.0` (#19); `install.sh` switched
+  over in the follow-up PR.
+- **Issue:** [Install the Flux skill with flux install claude, omp or codex](https://app.basecamp.com/5734045/buckets/45557517/todos/10394794625)
 - **Date:** 2026-10-12
 - **Base:** `eyra/flux-cli` `master` at `2aac1bb`; the latest release is `v0.4.0`
 - **Checked against:**
@@ -124,21 +125,28 @@ installed, the duplicate rules above apply, and the native omp copy wins.
 `curl … | bash` install fails. CI does not catch this: `install-check.yml`
 tests a locally built archive. So this ships in two steps.
 
-1. First PR, followed by a release (`v0.5.0`). **Done on `feat/install-command`.**
+1. First PR, followed by a release (`v0.5.0`). **Done: #19, released as
+   `v0.5.0` on 2026-10-12; the cask in `eyra/homebrew-tap` has the caveats.**
    - add the command, `skill/skill.go`, the tests and the README "Agent skill"
      subsection
    - add cask `caveats` telling users to run `flux install` with `claude`,
      `omp` and/or `codex`, and to rerun it after `brew upgrade`
    - leave `install.sh` and the archive `files` unchanged
-2. Second PR, after `v0.5.0` is released:
-   - `install.sh`: replace `install_skill` with `"$INSTALL_DIR/flux" install
-     claude`, and drop `SKILL_DIR` (`CLAUDE_CONFIG_DIR` replaces it)
-   - `.goreleaser.yml`: remove `skill/SKILL.md` from the archive `files`.
-     This must happen in the same PR as the `install.sh` change, because
-     `install.sh` currently reads the skill from the archive.
+2. Second PR, after `v0.5.0` is released. **Done.**
+   - `install.sh`: replace the copy in `install_skill` with
+     `"$INSTALL_DIR/flux" install claude`, and drop `SKILL_DIR`
+     (`CLAUDE_CONFIG_DIR` replaces it). If the skill install fails (for
+     example on a symlink), `install.sh` prints a warning and keeps the
+     installed binary.
+   - `.goreleaser.yml`: replace `skill/SKILL.md` in the archive `files` with
+     `none*`, so archives hold only the binary (without a `files` list,
+     GoReleaser would add `README.md`). This must happen in the same PR as the
+     `install.sh` change, because `install.sh` used to read the skill from the
+     archive.
    - `scripts/test-install.sh`: drop the "archive contains skill/SKILL.md"
      check, and keep the install, no-backup and backup checks, now run through
-     `flux install claude`
+     `flux install claude`. Unset `CLAUDE_CONFIG_DIR` instead of `SKILL_DIR`,
+     so a developer's environment can't leak into the sandbox.
 
 ## Out of scope
 
@@ -181,5 +189,13 @@ the binary built from this branch.
 6. **`goreleaser check` (v2.18.3) accepts the cask `caveats`.**
 7. **Not fixed here: errors are printed twice.** The whole CLI prints errors
    as `Error: <msg>` and then `<msg>` again: cobra prints the error, and
-   `Execute` in `cmd/root.go` prints it once more. Fix it separately with
-   `rootCmd.SilenceErrors = true`.
+   `Execute` in `cmd/root.go` prints it once more. This is already tracked as
+   [flux CLI prints every error twice](https://app.basecamp.com/5734045/buckets/45557517/todos/10390432942).
+8. **The published `v0.5.0` works with the new `install.sh`.** Under a
+   temporary `HOME`, the step 2 `install.sh` downloaded `v0.5.0` and installed
+   the binary and a skill identical to `skill/SKILL.md`. With a symlinked
+   `~/.claude/skills/flux`, it printed the warning, left the link target
+   empty, kept the binary and exited 0.
+9. **Related:** [flux update should also update the Flux skill](https://app.basecamp.com/5734045/buckets/45557517/todos/10385129256)
+   (Specification) can now call the same `installSkill` with the embedded
+   skill.
