@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -18,6 +19,8 @@ import (
 const githubRepo = "eyra/flux-cli"
 
 var currentVersion = "dev"
+
+var noSkill bool
 
 func SetVersion(v string) {
 	currentVersion = v
@@ -35,13 +38,6 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("could not fetch latest release: %w", err)
 		}
 
-		if latest == currentVersion {
-			fmt.Printf("Already up to date (%s)\n", currentVersion)
-			return nil
-		}
-
-		fmt.Printf("Updating to %s...\n", latest)
-
 		execPath, err := os.Executable()
 		if err != nil {
 			return fmt.Errorf("could not determine executable path: %w", err)
@@ -51,11 +47,19 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("could not resolve symlinks: %w", err)
 		}
 
-		if err := downloadAndReplace(downloadURL, execPath); err != nil {
-			return fmt.Errorf("update failed: %w", err)
+		if latest == currentVersion {
+			fmt.Printf("Already up to date (%s)\n", currentVersion)
+		} else {
+			fmt.Printf("Updating to %s...\n", latest)
+			if err := downloadAndReplace(downloadURL, execPath); err != nil {
+				return fmt.Errorf("update failed: %w", err)
+			}
+			fmt.Printf("✓ Updated to %s\n", latest)
 		}
 
-		fmt.Printf("✓ Updated to %s\n", latest)
+		if !noSkill {
+			refreshSkills(cmd.OutOrStdout(), cmd.ErrOrStderr(), execPath)
+		}
 		return nil
 	},
 }
@@ -97,6 +101,38 @@ func fetchLatestRelease() (tag, downloadURL string, err error) {
 	}
 
 	return "", "", fmt.Errorf("no release asset found for %s/%s", os_, arch)
+}
+
+// refreshSkills runs "<flux> install <agent>" for every agent that already has
+// the skill, so the skill comes from the binary at flux, not this process.
+// Symlinked skills are skipped; a failed install is only a warning, because
+// the binary itself was updated.
+func refreshSkills(stdout, stderr io.Writer, flux string) {
+	found := false
+	for _, a := range agents {
+		root, err := a.root()
+		if err != nil {
+			continue
+		}
+		dir, path := skillPaths(root)
+		if link := skillSymlink(dir, path); link != "" {
+			fmt.Fprintf(stdout, "Skipped %s: %s is a symlink\n", a.name, link)
+			found = true
+			continue
+		}
+		if _, err := os.Lstat(path); err != nil {
+			continue
+		}
+		found = true
+		install := exec.Command(flux, "install", a.name)
+		install.Stdout, install.Stderr = stdout, stderr
+		if err := install.Run(); err != nil {
+			fmt.Fprintf(stderr, "Warning: the flux skill for %s was not updated (%v)\n", a.name, err)
+		}
+	}
+	if !found {
+		fmt.Fprintln(stdout, "No flux skill installed; run flux install claude, omp or codex")
+	}
 }
 
 func downloadAndReplace(url, dest string) error {
@@ -148,5 +184,6 @@ func downloadAndReplace(url, dest string) error {
 }
 
 func init() {
+	updateCmd.Flags().BoolVar(&noSkill, "no-skill", false, "Don't refresh the installed flux skills")
 	rootCmd.AddCommand(updateCmd, versionCmd)
 }
