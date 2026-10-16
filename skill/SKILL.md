@@ -104,6 +104,7 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Render diagram (inline) | `flux diagrams render --mermaid "graph TD; A-->B" --env prod --project <key> --json` |
 | AppSignal apps | `flux appsignal apps --env prod --project <key> --json` |
 | AppSignal incidents | `flux appsignal incidents list --app <app> --env prod --project <key> --json` |
+| Update CLI and skill | `flux update [--no-skill]` |
 
 ## Environment & Project Selection
 
