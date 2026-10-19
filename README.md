@@ -171,6 +171,19 @@ run `resync` on it after renaming its children.
 A project without a Product to-do set returns a `product_not_configured` error.
 A server older than this CLI returns "not supported by this server".
 
+### Notifications
+
+```bash
+# Your unread Basecamp notifications for the project; marks the listed ones as read
+flux notifications --project flux
+
+# Only mentions, as JSON (marks nothing unless --mark-read)
+flux notifications --mentions --json [--mark-read]
+
+# Already-read notifications, 50 per page
+flux notifications --read --page 2
+```
+
 ### API namespaces
 
 The CLI calls `/api/delivery` for issues, milestones and epics, and

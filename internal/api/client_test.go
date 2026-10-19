@@ -211,3 +211,31 @@ func TestUploadImageFallsBackToLegacyPrefix(t *testing.T) {
 		t.Fatalf("UploadImage = %+v, %v", result, err)
 	}
 }
+
+func TestNotifications(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/delivery/notifications":
+			if r.URL.RawQuery != "mentions=true&page=2&project=flux&read=true" {
+				t.Errorf("unexpected query %q", r.URL.RawQuery)
+			}
+			io.WriteString(w, `{"notifications":[{"id":1,"type":"Mention","flux_id":"42","readable_sgid":"sg1"}]}`)
+		case "/api/delivery/notifications/read":
+			body, _ := io.ReadAll(r.Body)
+			if r.Method != http.MethodPost || string(body) != `{"readables":["sg1"]}` {
+				t.Errorf("unexpected %s body %s", r.Method, body)
+			}
+			io.WriteString(w, `{"ok":true,"marked":1}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	client := NewClient(server.URL, "token")
+
+	list, err := client.ListNotifications("flux", true, 2, true)
+	if err != nil || len(list) != 1 || *list[0].FluxID != "42" || list[0].ReadableSGID != "sg1" {
+		t.Fatalf("unexpected %+v, %v", list, err)
+	}
+	if marked, err := client.MarkNotificationsRead([]string{"sg1"}); err != nil || marked != 1 {
+		t.Fatalf("unexpected %d, %v", marked, err)
+	}
+}
