@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  # Called by tag.yml after it tagged a push to master.
   workflow_call:
     inputs:
       tag:
@@ -19,13 +18,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      # When called from tag.yml, github.ref is master, not the tag.
       GORELEASER_CURRENT_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # The tag when called from tag.yml; the pushed tag otherwise.
           ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-go@v5
