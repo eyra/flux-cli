@@ -271,16 +271,29 @@ Otherwise `FLUX_ENV` applies, then the default `prod`.
 
 ## Comment Formatting
 
-The server processes comment and description content submitted through the CLI:
+Write Markdown. The server converts every description and comment (issues,
+epics, milestones, scenes, use cases, comment edits, `advance --comment`) to
+the HTML Basecamp renders, so the result is the same from any client:
 
-1. **Plain text** is automatically converted — newlines become `<br>`, blank lines become paragraph breaks, and common Markdown syntax is converted to HTML:
-   - `**bold**` → `<strong>bold</strong>`
-   - `_italic_` → `<em>italic</em>`
-   - Lines starting with `- ` or `* ` become `<ul><li>` bullet lists
-2. **HTML** — if your content contains `<`, it is sent as-is. Use only tags Trix supports: `<strong>`, `<em>`, `<s>`, `<a href>`, `<ul>/<li>`, `<ol>/<li>`, `<blockquote>`, `<pre>`, `<br>`, `<p>`.
-3. **@mentions** — write `@Name` or `@First Last` anywhere in the content. The server looks up the person in the project and converts to a proper Basecamp mention (notifies them). Works in both plain text and HTML content.
+1. **Markdown** (CommonMark plus GitHub tables, `~~strike~~` and task lists):
+   headings, bold, italic, links, inline code, numbered and nested lists,
+   quotes, rules and tables render as such. Fenced code blocks become Basecamp
+   code blocks (` ```elixir ` is highlighted), and nothing inside code is
+   converted. A single newline is a line break, a blank line stays a blank line.
+   Bare URLs are linked by Basecamp. Task items show ☐/☑; images become links.
+2. **Inline HTML inside Markdown** is fine where Basecamp supports it, such as
+   `<sub>`, `<br>`, `<s>`. Any other tag (`Vec<String>`) or a lone `<` is shown
+   as text, so you don't need to escape it.
+3. **HTML only** (content whose top-level nodes are all elements, e.g.
+   `<p>…</p><ul>…</ul>`) is sent as is. Scripts, styles, form fields, event
+   handlers and `javascript:` links are always removed.
+4. **@mentions**: write `@Name` or `@First Last` in text. The server looks up
+   the person in the project and converts it to a Basecamp mention (notifies
+   them). Mentions inside code or links stay plain text.
 
-**Recommended:** write plain text with Markdown syntax and let the server handle the conversion.
+**Recommended:** write Markdown and let the server convert it. Requires a Flux
+server with the Markdown conversion (release after 2026-10-19); older servers
+only converted Markdown without any `<` in it.
 
 ## AI Model Attribution
 
