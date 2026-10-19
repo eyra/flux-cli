@@ -59,13 +59,31 @@ With --json they are only marked as read with --mark-read.
 		for i, n := range notifications {
 			readables[i] = n.ReadableSGID
 		}
-		marked, err := client.MarkNotificationsRead(readables)
-		if err != nil {
+		if err := client.MarkNotificationsRead(readables); err != nil {
 			return err
 		}
 		if !jsonFlag {
-			fmt.Printf("Marked %d as read\n", marked)
+			fmt.Printf("Marked %d as read\n", len(readables))
 		}
+		return nil
+	},
+}
+
+var notificationsReadCmd = &cobra.Command{
+	Use:   "read <readable_sgid>...",
+	Short: "Mark the given notifications as read",
+	Long: `Mark exactly the given notifications as read, by the readable_sgid that
+flux notifications --json shows for each.`,
+	Args: cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client := api.NewClient(baseURLForEnv(getEnv()), getAccessToken())
+		if err := client.MarkNotificationsRead(args); err != nil {
+			return err
+		}
+		if !jsonFlag {
+			fmt.Printf("Marked %d as read\n", len(args))
+		}
+		printOK()
 		return nil
 	},
 }
@@ -75,5 +93,6 @@ func init() {
 	notificationsCmd.Flags().Bool("read", false, "Show already-read notifications instead (never marks anything)")
 	notificationsCmd.Flags().Int("page", 1, "Page of read notifications, 50 per page (with --read)")
 	notificationsCmd.Flags().Bool("mark-read", false, "With --json, mark the listed notifications as read")
+	notificationsCmd.AddCommand(notificationsReadCmd)
 	rootCmd.AddCommand(notificationsCmd)
 }

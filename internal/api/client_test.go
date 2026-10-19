@@ -225,7 +225,7 @@ func TestNotifications(t *testing.T) {
 			if r.Method != http.MethodPost || string(body) != `{"readables":["sg1"]}` {
 				t.Errorf("unexpected %s body %s", r.Method, body)
 			}
-			io.WriteString(w, `{"ok":true,"marked":1}`)
+			io.WriteString(w, `{"ok":true}`)
 		}
 	}))
 	t.Cleanup(server.Close)
@@ -235,7 +235,7 @@ func TestNotifications(t *testing.T) {
 	if err != nil || len(list) != 1 || *list[0].FluxID != "42" || list[0].ReadableSGID != "sg1" {
 		t.Fatalf("unexpected %+v, %v", list, err)
 	}
-	if marked, err := client.MarkNotificationsRead([]string{"sg1"}); err != nil || marked != 1 {
-		t.Fatalf("unexpected %d, %v", marked, err)
+	if err := client.MarkNotificationsRead([]string{"sg1"}); err != nil {
+		t.Fatalf("unexpected %v", err)
 	}
 }

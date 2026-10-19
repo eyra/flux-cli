@@ -182,6 +182,9 @@ flux notifications --mentions --json [--mark-read]
 
 # Already-read notifications, 50 per page
 flux notifications --read --page 2
+
+# Mark exactly these notifications as read (readable_sgid from --json)
+flux notifications read <readable_sgid>...
 ```
 
 ### API namespaces

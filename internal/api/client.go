@@ -1267,23 +1267,16 @@ func (c *Client) ListNotifications(project string, read bool, page int, mentions
 }
 
 // MarkNotificationsRead marks the notifications with the given readable
-// SGIDs as read and returns how many the server marked.
-func (c *Client) MarkNotificationsRead(readables []string) (int, error) {
+// SGIDs as read.
+func (c *Client) MarkNotificationsRead(readables []string) error {
 	resp, err := c.post("/api/delivery/notifications/read", map[string][]string{"readables": readables})
 	if err != nil {
-		return 0, fmt.Errorf("failed to mark notifications read: %w", err)
+		return fmt.Errorf("failed to mark notifications read: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, c.handleResponseError(resp, "mark notifications read")
+		return c.handleResponseError(resp, "mark notifications read")
 	}
-
-	var response struct {
-		Marked int `json:"marked"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return 0, fmt.Errorf("failed to decode response: %w", err)
-	}
-	return response.Marked, nil
+	return nil
 }
