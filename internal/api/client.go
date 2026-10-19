@@ -1228,3 +1228,55 @@ func (c *Client) ResyncMilestone(id, project string) (*ResyncResult, error) {
 
 	return &result, nil
 }
+
+// =============================================================================
+// Notifications
+// =============================================================================
+
+// ListNotifications returns the signed-in person's unread notifications for
+// project, or the read ones (50 per page) when read is set.
+func (c *Client) ListNotifications(project string, read bool, page int, mentions bool) ([]Notification, error) {
+	params := url.Values{"project": {project}}
+	if read {
+		params.Set("read", "true")
+		if page > 1 {
+			params.Set("page", fmt.Sprint(page))
+		}
+	}
+	if mentions {
+		params.Set("mentions", "true")
+	}
+
+	resp, err := c.get("/api/delivery/notifications?" + params.Encode())
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch notifications: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleResponseError(resp, "list notifications")
+	}
+
+	var response struct {
+		Notifications []Notification `json:"notifications"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return response.Notifications, nil
+}
+
+// MarkNotificationsRead marks the notifications with the given readable
+// SGIDs as read.
+func (c *Client) MarkNotificationsRead(readables []string) error {
+	resp, err := c.post("/api/delivery/notifications/read", map[string][]string{"readables": readables})
+	if err != nil {
+		return fmt.Errorf("failed to mark notifications read: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return c.handleResponseError(resp, "mark notifications read")
+	}
+	return nil
+}

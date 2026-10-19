@@ -281,3 +281,18 @@ type ListIncidentsOptions struct {
 	Start     string
 	End       string
 }
+
+// Notification is one of the signed-in person's Basecamp notifications.
+type Notification struct {
+	ID           int64   `json:"id"`
+	Type         string  `json:"type"`
+	Title        string  `json:"title"`
+	Excerpt      *string `json:"excerpt"`
+	Creator      *string `json:"creator"`
+	CreatedAt    string  `json:"created_at"`
+	ReadAt       *string `json:"read_at"`
+	URL          string  `json:"url"`
+	FluxID       *string `json:"flux_id"`
+	CommentID    *string `json:"comment_id"`
+	ReadableSGID string  `json:"readable_sgid"`
+}

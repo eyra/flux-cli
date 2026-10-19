@@ -61,6 +61,8 @@ Replace `<key>` with the resolved production project key in every example. Scene
 | Auth status | `flux auth status --env prod --project <key> --json` |
 | List projects | `flux projects list --env prod --project <key> --json` |
 | List people | `flux people list --env prod --project <key> --json` |
+| Notifications | `flux notifications [--mentions] [--read] [--page N] [--mark-read] --env prod --project <key> --json` |
+| Mark notifications read | `flux notifications read <readable_sgid>... --env prod --project <key> --json` |
 | List issues | `flux issues list --env prod --project <key> --json [--stage testing] [--context dev]` |
 | Get issue | `flux issues get <id> --env prod --project <key> --json` |
 | Create issue | `flux issues create --title "..." --app web [--stage specification] [--size M] [--context Dev] [--epic <id>] [--milestone <id>] [--usecase <id-or-code>] --env prod --project <key> --json` |
@@ -143,6 +145,15 @@ Projects with a Product to-do set plan product work as **Scene → Use Case → 
 - A parent holds a copy of each child's title. After renaming children, run `resync` on the parent.
 
 A project without a Product to-do set fails with `product_not_configured`; an older server fails with "not supported by this server".
+
+## Notifications
+
+`flux notifications` shows the caller's own Basecamp notifications for the project, unread by default. Mentions have `type: Mention` (`--mentions` shows only those). `flux_id` is the Basecamp to-do the notification is about, which is the Flux ID when that to-do is an issue, epic, milestone, scene or use case; it is `null` for anything else, such as a card.
+
+- Human output marks the listed notifications as read; `--json` only marks them with `--mark-read`.
+- `flux notifications read <readable_sgid>...` marks exactly the given notifications as read.
+- `--read` shows already-read notifications again (50 per page, `--page N`) and never marks anything.
+- To check mentions: run `flux notifications --mentions --env prod --project <key> --json`, summarise each with its issue, and propose a reply or action. Post or execute nothing without the user's OK. Then mark only the mentions you handled with `flux notifications read <readable_sgid>...`; never use `--mark-read` for this, as it would also mark mentions that arrived after your summary.
 
 ## Issue Stages
 
