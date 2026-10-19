@@ -1,0 +1,42 @@
+name: Tag
+
+# Every push to master tags and releases the next version when its commits
+# call for one (see scripts/tag-release.sh): feat/feature → minor,
+# fix/refactor → patch, chore and the rest → no release. Major bumps are
+# tagged by hand.
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+# One at a time, so a second merge sees the tag the first one pushed.
+concurrency:
+  group: tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag the next version
+        id: tag
+        run: scripts/tag-release.sh
+
+  # A tag pushed with GITHUB_TOKEN does not trigger the release workflow's
+  # tag push, so run it from here.
+  release:
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+    secrets: inherit

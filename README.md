@@ -264,3 +264,19 @@ go build -o flux .
 FLUX_BASE_URL=http://localhost:4040 ./flux auth login
 FLUX_BASE_URL=http://localhost:4040 ./flux scenes list --project next
 ```
+
+### Releasing
+
+Every push to `master` releases the next version when its commits call for
+one. The Tag workflow reads the commit subjects since the latest `vX.Y.Z` tag
+(the PR's own commits included) and bumps by the highest one:
+
+| Commit subject | Bump |
+|---|---|
+| `feat:`, `feature:` (also `feat(scope):`) | minor: `v0.5.0` → `v0.6.0` |
+| `fix:`, `refactor:` | patch: `v0.5.0` → `v0.5.1` |
+| `chore:` and anything else (`docs:`, `ci:`, merge commits) | none, no release |
+
+It tags the pushed commit and runs the Release workflow for it (goreleaser,
+GitHub release, Homebrew tap). Major bumps are manual: push the `vX.0.0` tag
+yourself, which releases it as before.
