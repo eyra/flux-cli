@@ -239,3 +239,53 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("unexpected %v", err)
 	}
 }
+
+// Incident listings as eyra-flux-test sends them (2026-10-27): AppSignal's
+// Markdown wrapped per type, trimmed.
+const (
+	exceptionListing = `{"type":"exception","content":"# Exception Incidents\nShowing **1** of **1** exception incidents (1-1)\n\n## Incident #121 - ArgumentError\n├─ **State**: OPEN\n└─ **Preview**: ` + "```** (ArgumentError) unknown status code 520```" + `\n"}`
+	anomalyListing   = `{"type":"anomaly","content":"# Anomaly Detection Incidents\n**No anomaly incidents found** matching your criteria.\n"}`
+)
+
+func TestListIncidents(t *testing.T) {
+	for _, tc := range []struct {
+		name, kind, response string
+		want                 []IncidentList
+	}{
+		{"all types", "", `{"incidents":{"anomalies":` + anomalyListing + `,"exceptions":` + exceptionListing + `}}`,
+			[]IncidentList{{Type: "exception"}, {Type: "anomaly"}}},
+		{"exceptions", "exception", `{"incidents":` + exceptionListing + `}`, []IncidentList{{Type: "exception"}}},
+		{"anomalies", "anomaly", `{"incidents":` + anomalyListing + `}`, []IncidentList{{Type: "anomaly"}}},
+		{"none", "", `{"incidents":null}`, []IncidentList{}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/api/delivery/appsignal/incidents" || r.URL.Query().Get("app") != "Flux/prod" || r.URL.Query().Get("type") != tc.kind {
+					http.NotFound(w, r)
+					return
+				}
+				io.WriteString(w, tc.response)
+			}))
+			t.Cleanup(server.Close)
+
+			lists, err := NewClient(server.URL, "token").ListIncidents(ListIncidentsOptions{App: "Flux/prod", Type: tc.kind})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(lists) != len(tc.want) {
+				t.Fatalf("got %d listings, want %d: %+v", len(lists), len(tc.want), lists)
+			}
+			for i, list := range lists {
+				if list.Type != tc.want[i].Type {
+					t.Errorf("listing %d: type %q, want %q", i, list.Type, tc.want[i].Type)
+				}
+				if !strings.HasPrefix(list.Content, "# ") {
+					t.Errorf("listing %d: content not passed through: %q", i, list.Content)
+				}
+			}
+			if len(lists) > 0 && lists[0].Type == "exception" && !strings.Contains(lists[0].Content, "## Incident #121 - ArgumentError") {
+				t.Errorf("exception content lost: %q", lists[0].Content)
+			}
+		})
+	}
+}

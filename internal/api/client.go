@@ -872,7 +872,7 @@ func (c *Client) ListAppSignalApps() ([]string, error) {
 	return response.Apps, nil
 }
 
-func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]Incident, error) {
+func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]IncidentList, error) {
 	params := url.Values{}
 	params.Set("app", opts.App)
 	if opts.Type != "" {

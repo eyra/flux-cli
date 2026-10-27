@@ -1,5 +1,7 @@
 package api
 
+import "encoding/json"
+
 // Identity is the server-verified Basecamp principal for the active credentials.
 type Identity struct {
 	BasecampAccountID string `json:"basecamp_account_id"`
@@ -171,19 +173,47 @@ type UpdateMilestoneRequest struct {
 	AIModel         *string `json:"ai_model,omitempty"`
 }
 
-// Incident represents an AppSignal incident
-type Incident struct {
-	Number   int    `json:"number"`
-	Name     string `json:"name"`
-	State    string `json:"state"`
-	Severity string `json:"severity,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Count    int    `json:"count,omitempty"`
+// IncidentList is one incident type's listing. The server passes
+// AppSignal's own text (Markdown) through as Content, like every other
+// AppSignal endpoint.
+type IncidentList struct {
+	Type    string `json:"type"` // "exception" or "anomaly"
+	Content string `json:"content"`
+}
+
+// IncidentLists holds the listings of an incidents response, exceptions
+// before anomalies.
+type IncidentLists []IncidentList
+
+// UnmarshalJSON accepts both shapes the server sends under "incidents": one
+// listing ({"type","content"}) for --type exception or anomaly, or one per
+// type ({"exceptions":{...},"anomalies":{...}}) for all types.
+func (l *IncidentLists) UnmarshalJSON(data []byte) error {
+	var v struct {
+		IncidentList
+		Exceptions *IncidentList `json:"exceptions"`
+		Anomalies  *IncidentList `json:"anomalies"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	*l = IncidentLists{}
+	switch {
+	case v.Exceptions != nil || v.Anomalies != nil:
+		for _, list := range []*IncidentList{v.Exceptions, v.Anomalies} {
+			if list != nil {
+				*l = append(*l, *list)
+			}
+		}
+	case v.Type != "" || v.Content != "":
+		*l = append(*l, v.IncidentList)
+	}
+	return nil
 }
 
 // IncidentsResponse is the response from listing incidents
 type IncidentsResponse struct {
-	Incidents []Incident `json:"incidents"`
+	Incidents IncidentLists `json:"incidents"`
 }
 
 // IncidentDetail represents detailed information about an incident
