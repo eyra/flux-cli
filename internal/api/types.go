@@ -1,6 +1,10 @@
 package api
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+)
 
 // Identity is the server-verified Basecamp principal for the active credentials.
 type Identity struct {
@@ -185,10 +189,18 @@ type IncidentList struct {
 // before anomalies.
 type IncidentLists []IncidentList
 
+// ErrUnexpectedIncidents means the server's "incidents" value has neither
+// shape below. It is an error, not an empty result, so an unknown shape
+// never reads as "no incidents".
+var ErrUnexpectedIncidents = errors.New("unexpected incidents response")
+
 // UnmarshalJSON accepts both shapes the server sends under "incidents": one
 // listing ({"type","content"}) for --type exception or anomaly, or one per
 // type ({"exceptions":{...},"anomalies":{...}}) for all types.
 func (l *IncidentLists) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		return ErrUnexpectedIncidents
+	}
 	var v struct {
 		IncidentList
 		Exceptions *IncidentList `json:"exceptions"`
@@ -197,17 +209,25 @@ func (l *IncidentLists) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
-	*l = IncidentLists{}
+	var lists IncidentLists
 	switch {
 	case v.Exceptions != nil || v.Anomalies != nil:
 		for _, list := range []*IncidentList{v.Exceptions, v.Anomalies} {
 			if list != nil {
-				*l = append(*l, *list)
+				lists = append(lists, *list)
 			}
 		}
-	case v.Type != "" || v.Content != "":
-		*l = append(*l, v.IncidentList)
+	case v.Type != "":
+		lists = IncidentLists{v.IncidentList}
+	default:
+		return ErrUnexpectedIncidents
 	}
+	for _, list := range lists {
+		if list.Type == "" {
+			return ErrUnexpectedIncidents
+		}
+	}
+	*l = lists
 	return nil
 }
 

@@ -256,7 +256,6 @@ func TestListIncidents(t *testing.T) {
 			[]IncidentList{{Type: "exception"}, {Type: "anomaly"}}},
 		{"exceptions", "exception", `{"incidents":` + exceptionListing + `}`, []IncidentList{{Type: "exception"}}},
 		{"anomalies", "anomaly", `{"incidents":` + anomalyListing + `}`, []IncidentList{{Type: "anomaly"}}},
-		{"none", "", `{"incidents":null}`, []IncidentList{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -285,6 +284,30 @@ func TestListIncidents(t *testing.T) {
 			}
 			if len(lists) > 0 && lists[0].Type == "exception" && !strings.Contains(lists[0].Content, "## Incident #121 - ArgumentError") {
 				t.Errorf("exception content lost: %q", lists[0].Content)
+			}
+		})
+	}
+}
+
+func TestListIncidentsUnexpectedShape(t *testing.T) {
+	// None of these may read as "no incidents".
+	for _, tc := range []struct{ name, response string }{
+		{"null", `{"incidents":null}`},
+		{"empty object", `{"incidents":{}}`},
+		{"missing key", `{}`},
+		{"listing without type", `{"incidents":{"content":"# Exception Incidents\n"}}`},
+		{"type listing without type", `{"incidents":{"exceptions":{"content":"# Exception Incidents\n"}}}`},
+		{"other object", `{"incidents":{"items":[]}}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				io.WriteString(w, tc.response)
+			}))
+			t.Cleanup(server.Close)
+
+			lists, err := NewClient(server.URL, "token").ListIncidents(ListIncidentsOptions{App: "Flux/prod"})
+			if !errors.Is(err, ErrUnexpectedIncidents) {
+				t.Fatalf("expected unexpected incidents error, got %v (listings %+v)", err, lists)
 			}
 		})
 	}

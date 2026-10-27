@@ -907,6 +907,9 @@ func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]IncidentList, error
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
+	if response.Incidents == nil {
+		return nil, fmt.Errorf("failed to decode response: %w: no incidents", ErrUnexpectedIncidents)
+	}
 
 	return response.Incidents, nil
 }
