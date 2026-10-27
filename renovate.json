@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
     "group:allNonMajor",
     "schedule:weekly"
   ],
