@@ -236,26 +236,32 @@ type IncidentsResponse struct {
 	Incidents IncidentLists `json:"incidents"`
 }
 
-// IncidentDetail represents detailed information about an incident
+// ErrUnexpectedIncident means the server's incident response is not
+// {"number","content"}.
+var ErrUnexpectedIncident = errors.New("unexpected incident response")
+
+// IncidentDetail is one incident. The server passes AppSignal's own text
+// (Markdown) through as Content.
 type IncidentDetail struct {
-	Number      int      `json:"number"`
-	Name        string   `json:"name"`
-	State       string   `json:"state"`
-	Severity    string   `json:"severity,omitempty"`
-	Type        string   `json:"type,omitempty"`
-	Message     string   `json:"message,omitempty"`
-	StackTrace  string   `json:"stack_trace,omitempty"`
-	Namespace   string   `json:"namespace,omitempty"`
-	Assignees   []string `json:"assignees,omitempty"`
-	Occurrences int      `json:"occurrences,omitempty"`
-	Notes       []Note   `json:"notes,omitempty"`
+	Number  int    `json:"number"`
+	Content string `json:"content"`
 }
 
-// Note represents a note on an incident
-type Note struct {
-	Author  string `json:"author"`
-	Date    string `json:"date"`
-	Content string `json:"content"`
+// UnmarshalJSON requires both fields, so an unknown shape is an error and
+// never prints as an empty incident.
+func (d *IncidentDetail) UnmarshalJSON(data []byte) error {
+	var v struct {
+		Number  *int    `json:"number"`
+		Content *string `json:"content"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	if v.Number == nil || v.Content == nil {
+		return ErrUnexpectedIncident
+	}
+	*d = IncidentDetail{Number: *v.Number, Content: *v.Content}
+	return nil
 }
 
 // AssignIssueRequest is the request body for assigning an issue
@@ -272,31 +278,32 @@ type UpdateIncidentRequest struct {
 	Unassign string `json:"unassign,omitempty"` // comma-separated user IDs
 }
 
-// AppSignalResources represents available resources for an AppSignal app
+// ErrUnexpectedResources means the server's resources response is not
+// {"sections","content"}.
+var ErrUnexpectedResources = errors.New("unexpected resources response")
+
+// AppSignalResources is an app's resources (users, notifiers, namespaces,
+// dashboards). The server passes AppSignal's own text (Markdown) through as
+// Content; Sections lists the sections it asked for.
 type AppSignalResources struct {
-	Users      []AppSignalUser      `json:"users,omitempty"`
-	Notifiers  []AppSignalNotifier  `json:"notifiers,omitempty"`
-	Namespaces []string             `json:"namespaces,omitempty"`
-	Dashboards []AppSignalDashboard `json:"dashboards,omitempty"`
+	Sections []string `json:"sections"`
+	Content  string   `json:"content"`
 }
 
-// AppSignalUser represents a user in AppSignal
-type AppSignalUser struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// AppSignalNotifier represents a notifier in AppSignal
-type AppSignalNotifier struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
-// AppSignalDashboard represents a dashboard in AppSignal
-type AppSignalDashboard struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+// UnmarshalJSON requires both fields, as for IncidentDetail.
+func (r *AppSignalResources) UnmarshalJSON(data []byte) error {
+	var v struct {
+		Sections []string `json:"sections"`
+		Content  *string  `json:"content"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	if v.Sections == nil || v.Content == nil {
+		return ErrUnexpectedResources
+	}
+	*r = AppSignalResources{Sections: v.Sections, Content: *v.Content}
+	return nil
 }
 
 // ListIssuesOptions contains options for listing issues

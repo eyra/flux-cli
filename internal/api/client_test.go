@@ -312,3 +312,89 @@ func TestListIncidentsUnexpectedShape(t *testing.T) {
 		})
 	}
 }
+
+// An incident and an app's resources as eyra-flux-test sends them
+// (2026-10-27), trimmed.
+const (
+	incidentResponse  = `{"number":121,"content":"# Incident #121: ArgumentError\n├─ **Type**: ArgumentError\n└─ **Assigned**: ⚠️ Unassigned\n"}`
+	resourcesResponse = `{"sections":["namespaces"],"content":"# Application Resources\nRequested sections: namespaces\n\n## Namespaces (1)\n└─ **web**\n"}`
+)
+
+func TestGetIncident(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/delivery/appsignal/incidents/121" || r.URL.Query().Get("app") != "Flux/prod" {
+			http.NotFound(w, r)
+			return
+		}
+		io.WriteString(w, incidentResponse)
+	}))
+	t.Cleanup(server.Close)
+
+	incident, err := NewClient(server.URL, "token").GetIncident("Flux/prod", 121)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if incident.Number != 121 || !strings.HasPrefix(incident.Content, "# Incident #121: ArgumentError\n") {
+		t.Fatalf("unexpected incident: %+v", incident)
+	}
+}
+
+func TestGetAppSignalResources(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/delivery/appsignal/resources" || r.URL.Query().Get("app") != "Flux/prod" || r.URL.Query().Get("sections") != "namespaces" {
+			http.NotFound(w, r)
+			return
+		}
+		io.WriteString(w, resourcesResponse)
+	}))
+	t.Cleanup(server.Close)
+
+	resources, err := NewClient(server.URL, "token").GetAppSignalResources("Flux/prod", "namespaces")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(resources.Sections, []string{"namespaces"}) || !strings.Contains(resources.Content, "## Namespaces (1)\n└─ **web**") {
+		t.Fatalf("unexpected resources: %+v", resources)
+	}
+}
+
+func TestAppSignalUnexpectedShapes(t *testing.T) {
+	// None of these may print as an empty incident or empty resources.
+	for _, tc := range []struct {
+		name, response string
+		call           func(*Client) error
+		want           error
+	}{
+		{"incident null", `null`, getIncident, ErrUnexpectedIncident},
+		{"incident empty", `{}`, getIncident, ErrUnexpectedIncident},
+		{"incident without content", `{"number":121}`, getIncident, ErrUnexpectedIncident},
+		{"incident without number", `{"content":"# Incident #121: ArgumentError\n"}`, getIncident, ErrUnexpectedIncident},
+		{"incident structured", `{"number":121,"name":"ArgumentError","state":"open"}`, getIncident, ErrUnexpectedIncident},
+		{"resources null", `null`, getResources, ErrUnexpectedResources},
+		{"resources empty", `{}`, getResources, ErrUnexpectedResources},
+		{"resources without content", `{"sections":["namespaces"]}`, getResources, ErrUnexpectedResources},
+		{"resources without sections", `{"content":"# Application Resources\n"}`, getResources, ErrUnexpectedResources},
+		{"resources structured", `{"users":[{"id":"1","name":"Alex"}],"namespaces":["web"]}`, getResources, ErrUnexpectedResources},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				io.WriteString(w, tc.response)
+			}))
+			t.Cleanup(server.Close)
+
+			if err := tc.call(NewClient(server.URL, "token")); !errors.Is(err, tc.want) {
+				t.Fatalf("expected %v, got %v", tc.want, err)
+			}
+		})
+	}
+}
+
+func getIncident(c *Client) error {
+	_, err := c.GetIncident("Flux/prod", 121)
+	return err
+}
+
+func getResources(c *Client) error {
+	_, err := c.GetAppSignalResources("Flux/prod", "")
+	return err
+}
