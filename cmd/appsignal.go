@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/eyra/flux-cli/internal/api"
 	"github.com/spf13/cobra"
@@ -83,28 +84,29 @@ var appsignalIncidentsListCmd = &cobra.Command{
 			End:       appsignalEndFlag,
 		}
 
-		incidents, err := client.ListIncidents(opts)
+		lists, err := client.ListIncidents(opts)
 		if err != nil {
 			return err
 		}
 
 		if jsonFlag {
-			data, _ := json.MarshalIndent(incidents, "", "  ")
+			data, _ := json.MarshalIndent(lists, "", "  ")
 			fmt.Println(string(data))
 			return nil
 		}
 
-		if len(incidents) == 0 {
+		if len(lists) == 0 {
 			fmt.Println("No incidents found.")
 			return nil
 		}
 
-		for _, incident := range incidents {
-			severityStr := ""
-			if incident.Severity != "" {
-				severityStr = fmt.Sprintf(" [%s]", incident.Severity)
+		// Each listing is AppSignal's own Markdown, which already says when
+		// there are no incidents of its type.
+		for i, list := range lists {
+			if i > 0 {
+				fmt.Println()
 			}
-			fmt.Printf("#%d  %s  (%s)%s\n", incident.Number, incident.Name, incident.State, severityStr)
+			fmt.Println(strings.TrimRight(list.Content, "\n"))
 		}
 
 		return nil
@@ -138,38 +140,7 @@ var appsignalIncidentsGetCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Printf("# Incident #%d: %s\n\n", incident.Number, incident.Name)
-		fmt.Printf("State: %s\n", incident.State)
-		if incident.Severity != "" {
-			fmt.Printf("Severity: %s\n", incident.Severity)
-		}
-		if incident.Type != "" {
-			fmt.Printf("Type: %s\n", incident.Type)
-		}
-		if incident.Namespace != "" {
-			fmt.Printf("Namespace: %s\n", incident.Namespace)
-		}
-		if incident.Occurrences > 0 {
-			fmt.Printf("Occurrences: %d\n", incident.Occurrences)
-		}
-		if len(incident.Assignees) > 0 {
-			fmt.Printf("Assignees: %v\n", incident.Assignees)
-		}
-
-		if incident.Message != "" {
-			fmt.Printf("\n## Message\n\n%s\n", incident.Message)
-		}
-
-		if incident.StackTrace != "" {
-			fmt.Printf("\n## Stack Trace\n\n%s\n", incident.StackTrace)
-		}
-
-		if len(incident.Notes) > 0 {
-			fmt.Printf("\n## Notes (%d)\n\n", len(incident.Notes))
-			for _, note := range incident.Notes {
-				fmt.Printf("**%s** (%s):\n%s\n\n", note.Author, note.Date, note.Content)
-			}
-		}
+		fmt.Println(strings.TrimRight(incident.Content, "\n"))
 
 		return nil
 	},
@@ -253,36 +224,7 @@ var appsignalResourcesCmd = &cobra.Command{
 			return nil
 		}
 
-		if len(resources.Users) > 0 {
-			fmt.Println("## Users")
-			for _, user := range resources.Users {
-				fmt.Printf("  %s - %s\n", user.ID, user.Name)
-			}
-			fmt.Println()
-		}
-
-		if len(resources.Notifiers) > 0 {
-			fmt.Println("## Notifiers")
-			for _, notifier := range resources.Notifiers {
-				fmt.Printf("  %s - %s (%s)\n", notifier.ID, notifier.Name, notifier.Type)
-			}
-			fmt.Println()
-		}
-
-		if len(resources.Namespaces) > 0 {
-			fmt.Println("## Namespaces")
-			for _, ns := range resources.Namespaces {
-				fmt.Printf("  %s\n", ns)
-			}
-			fmt.Println()
-		}
-
-		if len(resources.Dashboards) > 0 {
-			fmt.Println("## Dashboards")
-			for _, dashboard := range resources.Dashboards {
-				fmt.Printf("  %s - %s\n", dashboard.ID, dashboard.Name)
-			}
-		}
+		fmt.Println(strings.TrimRight(resources.Content, "\n"))
 
 		return nil
 	},

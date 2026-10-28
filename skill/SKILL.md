@@ -247,7 +247,7 @@ flux appsignal apps --env prod --project <key> --json
 flux appsignal incidents list --app <app_name> --state open --env prod --project <key> --json
 
 # Get incident details
-flux appsignal incidents get --app <app_name> --number <N> --env prod --project <key> --json
+flux appsignal incidents get <N> --app <app_name> --env prod --project <key> --json
 ```
 
 ## Auth

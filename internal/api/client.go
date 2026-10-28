@@ -872,7 +872,7 @@ func (c *Client) ListAppSignalApps() ([]string, error) {
 	return response.Apps, nil
 }
 
-func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]Incident, error) {
+func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]IncidentList, error) {
 	params := url.Values{}
 	params.Set("app", opts.App)
 	if opts.Type != "" {
@@ -906,6 +906,9 @@ func (c *Client) ListIncidents(opts ListIncidentsOptions) ([]Incident, error) {
 	var response IncidentsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	if response.Incidents == nil {
+		return nil, fmt.Errorf("failed to decode response: %w: no incidents", ErrUnexpectedIncidents)
 	}
 
 	return response.Incidents, nil
