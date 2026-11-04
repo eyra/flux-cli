@@ -25,3 +25,10 @@ jobs:
 
       - name: Check archive layout against install.sh
         run: scripts/test-install.sh dist
+
+      - name: Check generated cask uses postflight_steps
+        run: |
+          cask=$(find dist -name flux-cli.rb | head -n1)
+          test -n "$cask"
+          grep -q '^\s*postflight_steps do' "$cask"
+          ! grep -q '^\s*postflight do' "$cask"
