@@ -163,7 +163,7 @@ Stage emojis (add to title when advancing beyond specification):
 - Design: ✏️
 - Development: 💻
 - Testing: 🧪
-- Done: ✅ (also mark complete in Basecamp)
+- Done: ✅ (`--stage done` completes the issue in Basecamp)
 
 ```bash
 # Advance to development (add emoji to title)

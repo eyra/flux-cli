@@ -591,7 +591,7 @@ func init() {
 	issuesCommentCmd.Flags().String("ai-model", "", "Caller-declared model for the content footer")
 
 	// Advance flags
-	issuesAdvanceCmd.Flags().StringVar(&issueTargetStageFlag, "stage", "", "Target stage (specification, design, development, testing)")
+	issuesAdvanceCmd.Flags().StringVar(&issueTargetStageFlag, "stage", "", "Target stage (specification, design, development, testing, done)")
 	issuesAdvanceCmd.Flags().StringVar(&issueTargetSubstageFlag, "substage", "", "Target sub-stage")
 	issuesAdvanceCmd.Flags().StringVar(&issueAdvanceCommentFlag, "comment", "", "Comment explaining the transition")
 	addRemovedPersonaFlag(issuesAdvanceCmd)
