@@ -5,7 +5,8 @@ before:
     - go mod tidy
 
 builds:
-  - main: .
+  - id: flux-darwin
+    main: .
     binary: flux
     env:
       - CGO_ENABLED=0
@@ -13,13 +14,36 @@ builds:
       - -s -w -X main.version={{.Tag}}
     goos:
       - darwin
+    goarch:
+      - amd64
+      - arm64
+  - id: flux-linux
+    main: .
+    binary: flux
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Tag}}
+    goos:
       - linux
     goarch:
       - amd64
       - arm64
 
 archives:
-  - formats:
+  - id: darwin
+    ids:
+      - flux-darwin
+    formats:
+      - tar.gz
+    name_template: "flux_{{ .Os }}_{{ .Arch }}"
+    # The binary embeds skill/SKILL.md; `flux install` installs it.
+    files:
+      - none*
+  - id: linux
+    ids:
+      - flux-linux
+    formats:
       - tar.gz
     name_template: "flux_{{ .Os }}_{{ .Arch }}"
     # The binary embeds skill/SKILL.md; `flux install` installs it.
@@ -31,6 +55,8 @@ checksum:
 
 homebrew_casks:
   - name: flux-cli
+    ids:
+      - darwin
     binaries:
       - flux
     description: Command-line interface for Flux project management
@@ -49,10 +75,8 @@ homebrew_casks:
       Rerun them after `brew upgrade flux-cli` to update the skill.
     hooks:
       post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/flux"]
-          end
+        install_steps: |
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/flux"]
 
 release:
   github:
